@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <header style="background-color: lightskyblue;">
+        <h1>Welcome to UK Team</h1>
+        <a href="">Home</a>
+        <a href="">Products</a>
+        <a href="">About Us</a>
+        <a href="">Contact Us</a>
+    </header>
+
+    <form action="index.php" method="post" enctype="multipart/form-data">
+       
+        <label for="username">Username:</label>
+        <input type="text" id="username" placeholder="Name" minlength="8" maxlength="15" required >
+        <br>
+        <label for="password">Password:</label>
+        <input type="password" id="password">
+        <br>
+        <label for="email">Email:</label>
+        <input type="email" name="email" id="email">
+        <br>
+        <label for="phone">Phone:</label>
+        <input type="tel" placeholder="+91-XXXXXXXXXX" pattern="[0-9]{10}" id="phone">
+        <br>
+        <label for="dob">Birthday:</label>
+        <input type="date" name="dob" id="dob">
+        <br>
+        <label for="Sex">Sex:</label>
+        <label for="Male">Male</label>
+        <input type="radio" name="Male" id="Male">
+        <label for="Female">Female</label>
+        <input type="radio" name="Female" id="Female">
+        <br>
+        <label for="experience">Experience in years:</label>
+        <input type="number" name="experience" id="experience" min="0" max="25">
+        <br>
+        <label for="subscribe">Subscribe:</label>
+        <input type="checkbox" name="subscribe" id="subscribe">
+        <br>
+        <label for="comment">Comment:</label>
+        <textarea name="comment" id="comment" rows="5" cols="100"></textarea>
+        <br>
+        <label for="file">Upload Image:</label>
+        <input type="file" name="file" id="file" accept="image/png, image/jpeg">
+        <br>
+        <input type="reset">
+        <input type="submit">
+        
+        <footer>
+
+        </footer>
+
+    </form>
+</body>
+</html>

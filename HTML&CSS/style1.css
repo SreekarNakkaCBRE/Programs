@@ -1,0 +1,19 @@
+header{
+    background-color: rgb(175, 171, 171);
+    text-align: center;
+    padding: 10px;
+}
+.navbar{
+    text-align: center;
+    background-color: darkcyan;
+    height: 25px;
+}
+.navbar a{
+    color: white;
+    float: left;
+    padding: 5px 10px;
+    text-decoration: none;
+}
+.navbar a:hover{
+    background-color: rgb(117, 166, 166);
+}

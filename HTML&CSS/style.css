@@ -1,0 +1,20 @@
+.navbar{
+    background-color: bisque;
+    overflow: hidden;
+}
+.navbar a{
+    float: left;
+    padding: 10px 10px;
+    font-size: medium;
+    text-decoration: none;
+}
+.navbar a:hover{
+    background-color: darkkhaki;
+    color: black;
+}
+.navbar a.active{
+    background-color: darkkhaki;
+}
+#lyrics{
+    float: right;
+}
