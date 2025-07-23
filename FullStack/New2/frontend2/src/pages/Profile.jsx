@@ -3,15 +3,26 @@ import { useState, useRef } from 'react';
 import axios from '../api/axios';
 import { colors } from '../utils/colors';
 import { saveImageToStatic, loadImageFromStatic } from '../utils/profilePicUtils';
+import Button from '@mui/material/Button';
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogContentText from '@mui/material/DialogContentText';
+import DialogTitle from '@mui/material/DialogTitle';
+import Snackbar from '@mui/material/Snackbar';
+import Alert from '@mui/material/Alert';
 
 function Profile() {
     const { user, setUser } = useAuth();
     const [isEditing, setIsEditing] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
-    const [success, setSuccess] = useState('');
     const [profilePicFile, setProfilePicFile] = useState(null);
     const [profilePicPreview, setProfilePicPreview] = useState(null);
+    const [dialogOpen, setDialogOpen] = useState(false);
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const [snackbarMessage, setSnackbarMessage] = useState('');
+    const [snackbarSeverity, setSnackbarSeverity] = useState('success');
     const fileInputRef = useRef(null);
     const [formData, setFormData] = useState({
         first_name: user?.first_name || '',
@@ -26,7 +37,6 @@ function Profile() {
             [e.target.name]: e.target.value
         });
         if (error) setError('');
-        if (success) setSuccess('');
     };
 
     const handleProfilePicChange = (e) => {
@@ -52,7 +62,6 @@ function Profile() {
             reader.readAsDataURL(file);
             
             if (error) setError('');
-            if (success) setSuccess('');
         }
     };
 
@@ -93,7 +102,11 @@ function Profile() {
                 }
             }
 
-            setSuccess('Profile updated successfully!');
+            // Show success snackbar
+            setSnackbarMessage('Profile updated successfully!');
+            setSnackbarSeverity('success');
+            setSnackbarOpen(true);
+            
             setIsEditing(false);
             setProfilePicFile(null);
             setProfilePicPreview(null);
@@ -105,6 +118,26 @@ function Profile() {
         }
     };
 
+    const handleClickOpen = () => {
+        setDialogOpen(true);
+    };
+
+    const handleClose = () => {
+        setDialogOpen(false);
+    };
+
+    const handleConfirmSave = () => {
+        setDialogOpen(false);
+        handleSave();
+    };
+
+    const handleSnackbarClose = (event, reason) => {
+        if (reason === 'clickaway') {
+            return;
+        }
+        setSnackbarOpen(false);
+    };
+
     const handleCancel = () => {
         setFormData({
             first_name: user?.first_name || '',
@@ -114,7 +147,6 @@ function Profile() {
         });
         setIsEditing(false);
         setError('');
-        setSuccess('');
         setProfilePicFile(null);
         setProfilePicPreview(null);
         if (fileInputRef.current) {
@@ -163,17 +195,12 @@ function Profile() {
                             Edit Profile
                         </button>
                     )}
+                    
                 </div>
 
                 {error && (
                     <div style={errorStyles}>
                         {error}
-                    </div>
-                )}
-
-                {success && (
-                    <div style={successStyles}>
-                        {success}
                     </div>
                 )}
 
@@ -327,7 +354,7 @@ function Profile() {
                                     ...saveButtonStyles,
                                     ...(loading ? disabledButtonStyles : {})
                                 }}
-                                onClick={handleSave}
+                                onClick={handleClickOpen}
                                 disabled={loading}
                             >
                                 {loading ? 'Saving...' : 'Save Changes'}
@@ -343,6 +370,48 @@ function Profile() {
                     )}
                 </div>
             </div>
+
+            {/* Confirmation Dialog */}
+            <Dialog
+                open={dialogOpen}
+                onClose={handleClose}
+                aria-labelledby="save-confirmation-dialog-title"
+                aria-describedby="save-confirmation-dialog-description"
+            >
+                <DialogTitle id="save-confirmation-dialog-title">
+                    {"Confirm Save Changes?"}
+                </DialogTitle>
+                <DialogContent>
+                    <DialogContentText id="save-confirmation-dialog-description">
+                        Are you sure you want to save your profile changes? This action will update your personal information.
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleClose} color="secondary">
+                        Cancel
+                    </Button>
+                    <Button onClick={handleConfirmSave} color="primary" autoFocus>
+                        Yes, Save Changes
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Success Snackbar */}
+            <Snackbar
+                open={snackbarOpen}
+                autoHideDuration={3000}
+                onClose={handleSnackbarClose}
+                anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+            >
+                <Alert
+                    onClose={handleSnackbarClose}
+                    severity={snackbarSeverity}
+                    variant="filled"
+                    sx={{ width: '100%' }}
+                >
+                    {snackbarMessage}
+                </Alert>
+            </Snackbar>
         </div>
     );
 }
@@ -471,10 +540,13 @@ const roleTagStyles = {
     fontSize: '0.9rem',
     fontWeight: '600',
     textTransform: 'uppercase',
-    letterSpacing: '0.5px'
+    letterSpacing: '0.5px',
+    width: 'fit-content',
+    whiteSpace: 'nowrap'
 };
 
 const editButtonStyles = {
+    
     backgroundColor: colors.primary.brightGreen,
     color: colors.primary.darkGreen,
     border: 'none',
@@ -534,20 +606,6 @@ const errorStyles = {
     border: `1px solid ${colors.danger}`
 };
 
-const successStyles = {
-    backgroundColor: '#efe',
-    color: colors.success,
-    padding: '1rem',
-    borderRadius: '6px',
-    margin: '0 2rem',
-    fontSize: '0.9rem',
-    border: `1px solid ${colors.success}`
-};
-
-const profilePicContainerStyles = {
-    position: 'relative',
-    display: 'inline-block'
-};
 
 const profileImageStyles = {
     width: '100%',
@@ -564,13 +622,6 @@ const avatarInitialsStyles = {
     height: '100%',
     fontSize: '2rem',
     fontWeight: 'bold'
-};
-
-const profilePicHintStyles = {
-    fontSize: '0.8rem',
-    color: colors.secondary.darkGray,
-    fontStyle: 'italic',
-    marginTop: '0.5rem'
 };
 
 const profilePicUploadSectionStyles = {

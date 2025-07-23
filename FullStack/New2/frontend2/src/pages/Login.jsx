@@ -1,8 +1,10 @@
 import { useState } from 'react';
-import axios from '../api/axios';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { colors } from '../utils/colors';
+import { useSnackbar } from 'notistack';
+import { CheckCircle, Error } from '@mui/icons-material';
+
 
 function Login() {
     const [form, setForm] = useState({
@@ -13,13 +15,15 @@ function Login() {
     const [error, setError] = useState('');
     const navigate = useNavigate();
     const { login } = useAuth();
+    const { enqueueSnackbar } = useSnackbar();
+
 
     const handleChange = (e) => {
         setForm({
             ...form, 
             [e.target.name]: e.target.value
         });
-        if (error) setError(''); // Clear error when user starts typing
+        if (error) setError(''); // Clear error when user starts typin
     };
 
     const handleSubmit = async (e) => {
@@ -28,10 +32,48 @@ function Login() {
         setError('');
         
         try {
+            // Send plain password - backend handles hashing and verification
             await login(form.email, form.password);
+            
+            // Show success message with Material-UI styling
+            enqueueSnackbar('Login successful! Welcome back.', { 
+                variant: 'success',
+                autoHideDuration: 3000,
+                anchorOrigin: {
+                    vertical: 'bottom',
+                    horizontal: 'left',
+                },
+                style: {
+                    backgroundColor: '#4caf50',
+                    color: '#fff',
+                    fontWeight: '500',
+                },
+                iconVariant: {
+                    success: <CheckCircle style={{ marginRight: 8 }} />
+                }
+            });
+
             navigate('/dashboard');
         } catch (error) {
-            setError(error.response?.data?.detail || 'Login failed. Please try again.');
+            const errorMessage = error.response?.data?.detail || 'Login failed. Please check your credentials.';
+            // Show error message in snackbar with Material-UI styling
+            enqueueSnackbar(errorMessage, { 
+                variant: 'error',
+                autoHideDuration: 5000,
+                anchorOrigin: {
+                    vertical: 'bottom',
+                    horizontal: 'left',
+                },
+                style: {
+                    backgroundColor: '#f44336',
+                    color: '#fff',
+                    fontWeight: '500',
+                },
+                iconVariant: {
+                    error: <Error style={{ marginRight: 8 }} />
+                }
+            });
+            
             console.error('Error during login:', error);
         } finally {
             setIsLoading(false);

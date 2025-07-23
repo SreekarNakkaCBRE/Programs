@@ -11,6 +11,9 @@ export const AuthProvider = ({ children }) => {
     const login = async (email, password) => {
         const response = await axios.post('/auth/login', { email, password });
         localStorage.setItem('token', response.data.access_token);
+        localStorage.setItem('email', email);
+        localStorage.setItem('password', password);
+
 
         const profile = await axios.get('/users/my_profile', {
             headers: { Authorization: `Bearer ${response.data.access_token}` }

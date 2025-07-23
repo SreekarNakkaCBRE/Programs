@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.schemas.user import UserRead, UserCreate, UserPartialUpdate, UserProfileResponse, UserUpdateResponse, UsersListResponse, RoleUpdateResponse, RoleUpdateRequest
 from app.models.user import User
 from app.utils.dependencies import get_current_user, require_admin
-from app.services.user_service import create_user, get_me, update_profile, list_all_users, update_user_role
+from app.services.user_service import create_user, get_me, update_profile, list_all_users, update_user_role, update_user
 
 router = APIRouter()
 
@@ -40,6 +40,15 @@ def create_user_endpoint(
     current_user: User = Depends(require_admin)
 ):
     return create_user(db, user_create)
+
+@router.put("/{user_id}", response_model=UserUpdateResponse)
+def update_user_endpoint(
+    user_id: int,
+    user_update: UserPartialUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin)
+):
+    return update_user(db, user_id, user_update)
 
 @router.put("/{user_id}/status", response_model=UserUpdateResponse)
 def update_user_status_endpoint(

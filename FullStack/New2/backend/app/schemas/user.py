@@ -22,6 +22,10 @@ class AdminCreateUser(UserBase):
     password: str
     role_id: int = Field(..., description="Role ID for the user, must be provided by admin")
 
+class AdminUpdateUser(UserBase):
+    id: int
+    role_id: Optional[int] = None  # Admin can change role, but it's optional in this context
+
 class UserPartialUpdate(BaseModel):
     first_name: Optional[str] = None
     last_name: Optional[str] = None
@@ -50,6 +54,8 @@ class UserListResponse(BaseModel):
     last_name: str
     email: EmailStr
     contact_number: Optional[str] = None
+    address: Optional[str] = None
+    profile_pic: Optional[str] = None
     is_active: bool
     role: Optional[RoleRead] = None
 

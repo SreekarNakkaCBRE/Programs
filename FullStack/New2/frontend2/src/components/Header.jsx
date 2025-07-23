@@ -48,7 +48,12 @@ function Header() {
     };
 
     const handleAdminClick = () => {
-        navigate('/admin');
+        navigate('/users-management');
+        setShowProfileDropdown(false);
+    };
+
+    const handleCreateUserClick = () => {
+        navigate('/create-user');
         setShowProfileDropdown(false);
     };
 
@@ -100,9 +105,15 @@ function Header() {
                                             👤 My Profile
                                         </div>
                                         {user.role?.name === 'admin' && (
+                                            <>
                                             <div style={dropdownItemStyles} onClick={handleAdminClick}>
-                                                🔧 Admin Panel
+                                                👥 Users Management
                                             </div>
+                                            <div style={dropdownItemStyles} onClick={handleCreateUserClick}>
+                                                ➕ Create User
+                                            </div>
+                                            </>
+                                            
                                         )}
                                         <div style={{...dropdownItemStyles, ...logoutItemStyles}} onClick={handleLogout}>
                                             🚪 Logout
@@ -150,7 +161,7 @@ const logoContainerStyles = {
 };
 
 const logoImageStyles = {
-    height: '40px',
+    height: '50px',
     width: 'auto',
     borderRadius: '4px'
 };

@@ -5,7 +5,9 @@ import axios from '../api/axios';
 import { colors } from '../utils/colors';
 import { loadImageFromStatic } from "../utils/profilePicUtils";
 
+
 function Dashboard() {
+ 
     const { user } = useAuth();
     const navigate = useNavigate();
     const [stats, setStats] = useState({
@@ -37,10 +39,10 @@ function Dashboard() {
             }
         };
 
-        if (user) {
+        if (user?.role?.name === 'admin') {
             fetchStats();
         }
-    }, [user]);
+    }, [user?.role?.name]);
 
     if (!user) {
         return (
@@ -76,10 +78,12 @@ function Dashboard() {
                                     e.target.nextSibling.style.display = 'flex';
                                 }}
                             />
-                        ) : null}
+                        ) : 
                         <div style={profileInitialStyles}>
                             {user.first_name?.[0]?.toUpperCase() + user.last_name?.[0]?.toUpperCase() || 'U'}
                         </div>
+                        }
+                        
                     </div>
                     <div style={userDetailsStyles}>
                         <h2 style={userNameStyles}>{user.first_name} {user.last_name}</h2>

@@ -1,10 +1,8 @@
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
 import { colors } from '../utils/colors';
 
 function Footer() {
-    const { user } = useAuth();
-    const navigate = useNavigate();
+    useAuth();
 
     return (
         <footer style={footerStyles}>
@@ -31,8 +29,8 @@ const footerStyles = {
 };
 
 const footerText = {
-    marginLeft: "180px"
-}
+    marginLeft: "120px"
+};
 
 const footerContentStyles = {
     display: 'flex',

@@ -1,15 +1,16 @@
 from passlib.context import CryptContext
-from jose import JWTError, jwt
+from jose import jwt
 from datetime import datetime, timedelta, UTC
-
+from app.logger.logger import logger
 
 SECRET_KEY = "8179227736"
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def verify_password(plain_password, hashed_password):
+    #logger.info(f"plain_password: {plain_password} \n hashed_password: {hashed_password}")
     return pwd_context.verify(plain_password, hashed_password)
 
 def hash_password(password: str) -> str:

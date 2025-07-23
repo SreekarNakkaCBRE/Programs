@@ -10,12 +10,12 @@ function Sidebar() {
     // Base menu items for all users
     const baseMenuItems = [
         { path: '/dashboard', label: 'Dashboard', icon: '📊' },
-        { path: '/profile', label: 'Profile', icon: '👤' }
+        { path: '/profile', label: 'My Profile', icon: '👤' }
     ];
 
     // Admin-only menu items
     const adminMenuItems = [
-        { path: '/users-list', label: 'Users Management', icon: '👥' },
+        { path: '/users-management', label: 'Users Management', icon: '👥' },
         { path: '/create-user', label: 'Create User', icon: '➕' },
     ];
 
@@ -63,12 +63,12 @@ function Sidebar() {
 }
 
 const sidebarStyles = {
-    backgroundColor: colors.primary.darkGreen,
+    backgroundColor: colors.primary.darkTeal,
     width: '250px',
     height: '100vh',
     position: 'fixed',
     left: 0,
-    top: '80px',
+    top: '70px',
     overflowY: 'auto',
     borderRight: `1px solid ${colors.primary.gray}`,
     zIndex: 999

@@ -3,6 +3,8 @@ from app.models.user import User
 from app.utils.auth import hash_password, verify_password, create_access_token
 from app.schemas.auth import SignupRequest, LoginRequest, TokenResponse, SignupResponse
 from fastapi import HTTPException, status
+from app.logger.logger import logger
+
 
 def signup_user(db: Session, user_data: SignupRequest):
     user_exists = db.query(User).filter(User.email == user_data.email).first()
@@ -23,6 +25,7 @@ def signup_user(db: Session, user_data: SignupRequest):
         role_id=user_data.role_id,
         is_active=True
     )
+    logger.info(f"Registering new user: {new_user.email}")
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
@@ -46,5 +49,6 @@ def login_user(db: Session, login_data: LoginRequest):
             status_code=status.HTTP_403_FORBIDDEN,
             detail="User is inactive"
         )
+    logger.info(f"User {user.email} logged in successfully")
     access_token = create_access_token(data={"sub":user.email, "role_id": user.role_id})
     return TokenResponse(access_token=access_token, token_type="bearer")

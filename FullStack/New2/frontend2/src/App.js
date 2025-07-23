@@ -5,14 +5,16 @@ import SignUp from './pages/SignUp';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
-import AdminPanel from './pages/UserManagement';
+import UserManagement from './pages/UserManagement';
 import PrivateRoute from './components/PrivateRoute';
 import Layout from './components/Layout';
 import CreateUser from './pages/CreateUser';
 
+
 function App() {
   return (
     <Routes>
+      
       <Route path="/" element={<Login />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<SignUp />} />
@@ -30,17 +32,10 @@ function App() {
           </Layout>
         </PrivateRoute>
       } />
-      <Route path="/admin" element={
+      <Route path="/users-management" element={
         <PrivateRoute requireAdmin={true}>
           <Layout>
-            <AdminPanel />
-          </Layout>
-        </PrivateRoute>
-      } />
-      <Route path="/users-list" element={
-        <PrivateRoute requireAdmin={true}>
-          <Layout>
-            <AdminPanel />
+            <UserManagement />
           </Layout>
         </PrivateRoute>
       } />

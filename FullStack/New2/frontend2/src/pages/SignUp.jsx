@@ -1,6 +1,10 @@
 import {useState} from 'react';
 import axios from '../api/axios';
 import { useNavigate } from 'react-router-dom';
+import { useSnackbar } from 'notistack';
+import { CheckCircle } from '@mui/icons-material';
+
+
 
 function SignUp(){
 
@@ -16,6 +20,7 @@ function SignUp(){
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const navigate = useNavigate();
+    const { enqueueSnackbar } = useSnackbar();
 
     const handleChange = (e) => {
         setForm({
@@ -25,7 +30,25 @@ function SignUp(){
     }
 
     const handleFileChange = (e) => {
-        setProfilePic(e.target.files[0]);
+        const file = e.target.files[0];
+        if (file) {
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+                setError('Please select an image file (JPG, PNG, etc.)');
+                e.target.value = ''; // Clear the input
+                return;
+            }
+            
+            // Validate file size (max 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                setError('Image size should be less than 5MB');
+                e.target.value = ''; // Clear the input
+                return;
+            }
+            
+            setProfilePic(file);
+            if (error) setError(''); // Clear any previous errors
+        }
     }
 
     const handleSubmit = async (e) => {
@@ -33,14 +56,36 @@ function SignUp(){
         setIsLoading(true);
         setError('');
         
+        // Create signup data as JSON (not FormData) to match backend expectations
         const signupData = {
             ...form,
-            profile_pic: profile_pic ? profile_pic.name : null
+            profile_pic: profile_pic ? profile_pic.name : null // Backend expects filename as string
         };
         
         try {
-            await axios.post('/auth/signup', signupData);
-            alert('Sign up successful! Please log in.');
+            // Send as JSON, not FormData, since backend expects JSON
+            await axios.post('/auth/signup', signupData, {
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            enqueueSnackbar('Sign up successful! Please log in.', { 
+                variant: 'success',
+                autoHideDuration: 3000,
+                anchorOrigin: {
+                    vertical: 'bottom',
+                    horizontal: 'left',
+                },
+                style: {
+                    backgroundColor: '#4caf50',
+                    color: '#fff',
+                    fontWeight: '500',
+                },
+                iconVariant: {
+                    success: <CheckCircle style={{ marginRight: 8 }} />
+                }
+            });
+            //alert('Sign up successful! Please log in.');
             navigate('/login');
         } catch (error) {
             setError(error.response?.data?.detail || 'Sign up failed. Please try again.');
@@ -189,6 +234,8 @@ function SignUp(){
                         <input
                             name="contact_number"
                             type="tel"
+                            maxLength={10}
+                            minLength={10}
                             placeholder="Enter your phone number"
                             value={form.contact_number}
                             onChange={handleChange}
@@ -229,7 +276,7 @@ function SignUp(){
                     
                     <div style={{marginBottom: '1.5rem'}}>
                         <label style={{display: 'block', marginBottom: '0.5rem', color: '#003F2D', fontWeight: '500', fontSize: '0.9rem'}}>
-                            Profile Picture
+                            Profile Picture (Optional)
                         </label>
                         <input 
                             type="file" 
@@ -245,6 +292,24 @@ function SignUp(){
                                 boxSizing: 'border-box'
                             }}
                         />
+                        {profile_pic && (
+                            <p style={{
+                                color: '#003F2D',
+                                fontSize: '0.8rem',
+                                marginTop: '0.25rem',
+                                marginBottom: 0
+                            }}>
+                                Selected: {profile_pic.name}
+                            </p>
+                        )}
+                        <p style={{
+                            color: '#7F8480',
+                            fontSize: '0.75rem',
+                            marginTop: '0.25rem',
+                            marginBottom: 0
+                        }}>
+                            Max size: 5MB. Supported formats: JPG, PNG, GIF
+                        </p>
                     </div>
                     
                     <button 

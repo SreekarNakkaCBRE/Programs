@@ -2,8 +2,9 @@ import { useAuth } from '../context/AuthContext';
 import { useState, useRef } from 'react';
 import axios from '../api/axios';
 import { colors } from '../utils/colors';
-import { saveImageToStatic, loadImageFromStatic } from '../utils/profilePicUtils';
-
+import { saveImageToStatic } from '../utils/profilePicUtils';
+import { useSnackbar } from 'notistack';
+import { CheckCircle } from '@mui/icons-material';
 
 function CreateUser() {
     const [form, setForm] = useState({
@@ -17,6 +18,7 @@ function CreateUser() {
     const [error, setError] = useState('');
     const { user } = useAuth();
     const profilePicRef = useRef(null);
+    const { enqueueSnackbar } = useSnackbar();
 
     const handleChange = (e) => {
         setForm({
@@ -43,7 +45,22 @@ function CreateUser() {
             }
             
             await axios.post('/users/create', userData);
-            alert('User created successfully!');
+            enqueueSnackbar('User created successfully!', {
+                variant: 'success',
+                autoHideDuration: 3000,
+                anchorOrigin: {
+                    vertical: 'top',
+                    horizontal: 'center',
+                },
+                style: {
+                    backgroundColor: '#4caf50',
+                    color: '#fff',
+                    fontWeight: '500',
+                },
+                iconVariant: {
+                    success: <CheckCircle style={{ marginRight: 8 }} />
+                }
+            });
             // Reset form
             setForm({
                 first_name: '',
