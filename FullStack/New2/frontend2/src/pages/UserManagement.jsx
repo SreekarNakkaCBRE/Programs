@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import axios from '../api/axios';
@@ -14,7 +14,7 @@ import { CheckCircle, Error } from '@mui/icons-material';
 
 
 function AdminPanel() {
-    const { user } = useAuth();
+    const { user, loading: authLoading } = useAuth();
     const navigate = useNavigate();
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -29,6 +29,7 @@ function AdminPanel() {
     const [userToUpdateRole, setUserToUpdateRole] = useState(null);
     const [newRoleToSet, setNewRoleToSet] = useState(null);
     const { enqueueSnackbar } = useSnackbar();
+    const hasInitiallyFetched = useRef(false);
 
     // Add spinner animation if not already added
     useEffect(() => {
@@ -64,10 +65,11 @@ function AdminPanel() {
 
     // Fetch users list
     useEffect(() => {
-        if (user?.role?.name === 'admin') {
+        if (!authLoading && user?.role?.name === 'admin' && !hasInitiallyFetched.current) {
+            hasInitiallyFetched.current = true;
             fetchUsers();
         }
-    }, [user]);
+    }, [authLoading, user?.role?.name]); // Only re-run when auth loading finishes or role changes
 
     const handleRoleUpdate = async (userId, newRoleId) => {
         setUpdatingRole(userId);

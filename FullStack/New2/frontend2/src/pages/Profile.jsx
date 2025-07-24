@@ -85,6 +85,15 @@ function Profile() {
             // Update profile data
             await axios.put('/users/Update_my_profile', formData);
 
+            // Update user context with new form data
+            setUser(prev => ({
+                ...prev,
+                first_name: formData.first_name,
+                last_name: formData.last_name,
+                contact_number: formData.contact_number,
+                address: formData.address
+            }));
+
             // Save profile picture to static folder if selected
             if (profilePicFile) {
                 try {
@@ -373,6 +382,14 @@ function Profile() {
 
             {/* Confirmation Dialog */}
             <Dialog
+            sx={{
+                    '& .MuiDialog-paper': {
+                    borderRadius: '12px',
+                    backgroundColor: colors.secondary.lightGreen,
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+                    minWidth: '400px',
+                    },
+                }}
                 open={dialogOpen}
                 onClose={handleClose}
                 aria-labelledby="save-confirmation-dialog-title"
@@ -387,10 +404,30 @@ function Profile() {
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={handleClose} color="secondary">
+                    <Button 
+                    sx={{
+                            marginRight: '8px',
+                            backgroundColor: colors.secondary.mediumGreen,
+                            color: colors.white,
+                            '&:hover': {
+                                backgroundColor: colors.secondary.darkGray,
+                            },
+                            borderRadius: '8px',
+                        }}
+                    onClick={handleClose} color="secondary">
                         Cancel
                     </Button>
-                    <Button onClick={handleConfirmSave} color="primary" autoFocus>
+                    <Button
+                    sx={{ 
+                            marginRight: '8px',
+                            backgroundColor: colors.primary.brightGreen,
+                            color: colors.white,
+                            '&:hover': {
+                                backgroundColor: colors.primary.darkGreen,
+                            },
+                            borderRadius: '8px',
+                        }}
+                    onClick={handleConfirmSave} color="primary" autoFocus>
                         Yes, Save Changes
                     </Button>
                 </DialogActions>

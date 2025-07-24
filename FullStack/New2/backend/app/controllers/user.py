@@ -5,6 +5,7 @@ from app.schemas.user import UserRead, UserCreate, UserPartialUpdate, UserProfil
 from app.models.user import User
 from app.utils.dependencies import get_current_user, require_admin
 from app.services.user_service import create_user, get_me, update_profile, list_all_users, update_user_role, update_user
+from app.logger.logger import logger
 
 router = APIRouter()
 

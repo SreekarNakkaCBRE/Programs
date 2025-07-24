@@ -1,0 +1,527 @@
+/* Import custom fonts */
+@font-face {
+  font-family: 'FinancierDisplay';
+  src: url('./fonts/FinancierDisplay-Regular.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'FinancierDisplay';
+  src: url('./fonts/FinancierDisplay-RegularItalic.otf') format('opentype');
+  font-weight: 400;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: 'FinancierDisplay';
+  src: url('./fonts/FinancierDisplay-Medium.otf') format('opentype');
+  font-weight: 500;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'FinancierDisplay';
+  src: url('./fonts/FinancierDisplay-MediumItalic.otf') format('opentype');
+  font-weight: 500;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: 'FinancierDisplay';
+  src: url('./fonts/FinancierDisplay-Semibold.otf') format('opentype');
+  font-weight: 600;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'FinancierDisplay';
+  src: url('./fonts/FinancierDisplay-SemiboldItalic.otf') format('opentype');
+  font-weight: 600;
+  font-style: italic;
+}
+
+/* CSS Variables for CBRE Colors */
+:root {
+  --cbre-primary: #003F2D;      /* Dark Green */
+  --cbre-accent: #17E88F;       /* Bright Green */
+  --cbre-secondary: #012A2D;    /* Darker Green */
+  --cbre-neutral: #435254;      /* Dark Gray */
+  --cbre-light: #CAD1D3;        /* Light Gray */
+  --cbre-white: #FFFFFF;
+  --cbre-black: #000000;
+}
+
+/* Global Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'FinancierDisplay', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--cbre-light);
+  color: var(--cbre-primary);
+  line-height: 1.6;
+}
+
+.App {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(135deg, var(--cbre-light) 0%, var(--cbre-white) 100%);
+}
+
+/* Header Styles */
+.header {
+  background: linear-gradient(90deg, var(--cbre-primary) 0%, var(--cbre-secondary) 100%) !important;
+  box-shadow: 0 4px 12px rgba(0, 63, 45, 0.15) !important;
+}
+
+.header-title {
+  font-family: 'FinancierDisplay', sans-serif !important;
+  font-weight: 600 !important;
+  color: var(--cbre-white) !important;
+  letter-spacing: 0.5px;
+}
+
+.user-info {
+  color: var(--cbre-light) !important;
+  font-family: 'FinancierDisplay', sans-serif !important;
+}
+
+.logout-btn {
+  background-color: var(--cbre-accent) !important;
+  color: var(--cbre-primary) !important;
+  font-family: 'FinancierDisplay', sans-serif !important;
+  font-weight: 500 !important;
+  border-radius: 25px !important;
+  padding: 8px 20px !important;
+  transition: all 0.3s ease !important;
+}
+
+.logout-btn:hover {
+  background-color: var(--cbre-primary) !important;
+  color: var(--cbre-white) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 63, 45, 0.4);
+}
+
+/* Footer Styles */
+.footer {
+  background-color: var(--cbre-primary) !important;
+  margin-top: auto;
+}
+
+.footer-text {
+  color: var(--cbre-light) !important;
+  font-family: 'FinancierDisplay', sans-serif !important;
+}
+
+/* Main Content */
+.main-content {
+  flex: 1;
+  padding: 20px 0;
+}
+
+/* Form Styles */
+.MuiPaper-root {
+  background-color: var(--cbre-white) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 8px 32px rgba(0, 63, 45, 0.1) !important;
+  border: 1px solid var(--cbre-light) !important;
+}
+
+.MuiTextField-root {
+  margin-bottom: 16px !important;
+}
+
+.MuiInputLabel-root {
+  font-family: 'FinancierDisplay', sans-serif !important;
+  color: var(--cbre-neutral) !important;
+}
+
+.MuiInputLabel-root.Mui-focused {
+  color: var(--cbre-primary) !important;
+}
+
+.MuiOutlinedInput-root {
+  font-family: 'FinancierDisplay', sans-serif !important;
+}
+
+.MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
+  border-color: var(--cbre-primary) !important;
+  border-width: 2px !important;
+}
+
+.MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline {
+  border-color: var(--cbre-secondary) !important;
+}
+
+/* Button Styles */
+.MuiButton-contained {
+  background: linear-gradient(135deg, var(--cbre-primary) 0%, var(--cbre-secondary) 100%) !important;
+  color: var(--cbre-white) !important;
+  font-family: 'FinancierDisplay', sans-serif !important;
+  font-weight: 600 !important;
+  border-radius: 12px !important;
+  padding: 12px 24px !important;
+  text-transform: none !important;
+  font-size: 16px !important;
+  transition: all 0.3s ease !important;
+  box-shadow: 0 4px 16px rgba(0, 63, 45, 0.2) !important;
+}
+
+.MuiButton-contained:hover {
+  background: linear-gradient(135deg, var(--cbre-secondary) 0%, var(--cbre-primary) 100%) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 63, 45, 0.3) !important;
+}
+
+.MuiButton-contained:disabled {
+  background: var(--cbre-neutral) !important;
+  color: var(--cbre-light) !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Typography */
+.MuiTypography-h4,
+.MuiTypography-h5,
+.MuiTypography-h6 {
+  font-family: 'FinancierDisplay', sans-serif !important;
+  font-weight: 600 !important;
+  color: var(--cbre-primary) !important;
+}
+
+.MuiTypography-body1,
+.MuiTypography-body2 {
+  font-family: 'FinancierDisplay', sans-serif !important;
+  color: var(--cbre-neutral) !important;
+}
+
+/* Dashboard Styles */
+.dashboard-container {
+  background-color: var(--cbre-white);
+  border-radius: 16px;
+  padding: 24px;
+  margin: 20px 0;
+  box-shadow: 0 8px 32px rgba(0, 63, 45, 0.05);
+  border: 1px solid var(--cbre-light);
+}
+
+.MuiDrawer-paper {
+  background: linear-gradient(180deg, var(--cbre-white) 0%, var(--cbre-light) 100%) !important;
+  border-right: 2px solid var(--cbre-neutral) !important;
+}
+
+.MuiListItem-root:hover {
+  background-color: var(--cbre-light) !important;
+  border-radius: 8px !important;
+  margin: 4px 8px !important;
+}
+
+.MuiListItemText-primary {
+  font-family: 'FinancierDisplay', sans-serif !important;
+  font-weight: 500 !important;
+  color: var(--cbre-primary) !important;
+}
+
+/* Alert Styles */
+.MuiAlert-standardError {
+  background-color: var(--cbre-neutral) !important;
+  color: var(--cbre-white) !important;
+  font-family: 'FinancierDisplay', sans-serif !important;
+  border-radius: 12px !important;
+}
+
+.MuiAlert-standardSuccess {
+  background-color: var(--cbre-secondary) !important;
+  color: var(--cbre-white) !important;
+  font-family: 'FinancierDisplay', sans-serif !important;
+  border-radius: 12px !important;
+}
+
+/* Link Styles */
+a {
+  color: var(--cbre-primary) !important;
+  text-decoration: none !important;
+  font-family: 'FinancierDisplay', sans-serif !important;
+  font-weight: 500 !important;
+  transition: color 0.3s ease !important;
+}
+
+a:hover {
+  color: var(--cbre-secondary) !important;
+  text-decoration: underline !important;
+}
+
+/* Loading Animation */
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.loading {
+  animation: pulse 2s infinite;
+}
+
+/* Profile Picture Styles */
+.profile-pic-preview {
+  border: 3px solid var(--cbre-primary);
+  box-shadow: 0 4px 16px rgba(0, 63, 45, 0.2);
+  transition: all 0.3s ease;
+}
+
+.profile-pic-preview:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px rgba(0, 63, 45, 0.3);
+}
+
+/* File Input Styles */
+.MuiInput-root {
+  font-family: 'FinancierDisplay', sans-serif !important;
+  color: var(--cbre-neutral) !important;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--cbre-light);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--cbre-primary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--cbre-secondary);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .header-title {
+    font-size: 1.2rem !important;
+  }
+  
+  .dashboard-container {
+    margin: 10px;
+    padding: 16px;
+  }
+  
+  .MuiContainer-root {
+    padding: 8px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .header img {
+    height: 32px !important;
+  }
+  
+  .header-title {
+    font-size: 1rem !important;
+  }
+  
+  .user-info {
+    display: none !important;
+  }
+}
+
+/* Animation for page transitions */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page-container {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+/* Additional CBRE Component Styling */
+/* AppBar and Navigation */
+.MuiAppBar-root {
+  background: linear-gradient(90deg, var(--cbre-primary) 0%, var(--cbre-secondary) 100%) !important;
+  box-shadow: 0 4px 12px rgba(0, 63, 45, 0.15) !important;
+}
+
+/* Input and Form Components */
+.MuiInput-underline:before {
+  border-bottom-color: var(--cbre-neutral) !important;
+}
+
+.MuiInput-underline:hover:before {
+  border-bottom-color: var(--cbre-primary) !important;
+}
+
+.MuiInput-underline:after {
+  border-bottom-color: var(--cbre-primary) !important;
+}
+
+/* Select and Menu Components */
+.MuiSelect-select {
+  font-family: 'FinancierDisplay', sans-serif !important;
+  color: var(--cbre-primary) !important;
+}
+
+.MuiMenuItem-root {
+  font-family: 'FinancierDisplay', sans-serif !important;
+  color: var(--cbre-primary) !important;
+}
+
+.MuiMenuItem-root:hover {
+  background-color: var(--cbre-light) !important;
+}
+
+.MuiMenuItem-root.Mui-selected {
+  background-color: var(--cbre-primary) !important;
+  color: var(--cbre-white) !important;
+}
+
+/* Table Components */
+.MuiTableHead-root {
+  background-color: var(--cbre-primary) !important;
+}
+
+.MuiTableHead-root .MuiTableCell-root {
+  color: var(--cbre-white) !important;
+  font-family: 'FinancierDisplay', sans-serif !important;
+  font-weight: 600 !important;
+}
+
+.MuiTableBody-root .MuiTableCell-root {
+  color: var(--cbre-neutral) !important;
+  font-family: 'FinancierDisplay', sans-serif !important;
+}
+
+.MuiTableRow-root:hover {
+  background-color: var(--cbre-light) !important;
+}
+
+/* Chip Components */
+.MuiChip-root {
+  background-color: var(--cbre-light) !important;
+  color: var(--cbre-primary) !important;
+  font-family: 'FinancierDisplay', sans-serif !important;
+}
+
+.MuiChip-filled {
+  background-color: var(--cbre-primary) !important;
+  color: var(--cbre-white) !important;
+}
+
+/* Badge Components */
+.MuiBadge-badge {
+  background-color: var(--cbre-primary) !important;
+  color: var(--cbre-white) !important;
+  font-family: 'FinancierDisplay', sans-serif !important;
+}
+
+/* Progress Components */
+.MuiLinearProgress-root {
+  background-color: var(--cbre-light) !important;
+}
+
+.MuiLinearProgress-bar {
+  background-color: var(--cbre-primary) !important;
+}
+
+.MuiCircularProgress-root {
+  color: var(--cbre-primary) !important;
+}
+
+/* Card Components */
+.MuiCard-root {
+  background-color: var(--cbre-white) !important;
+  border: 1px solid var(--cbre-light) !important;
+  box-shadow: 0 4px 16px rgba(0, 63, 45, 0.08) !important;
+}
+
+.MuiCardHeader-root {
+  background-color: var(--cbre-primary) !important;
+  color: var(--cbre-white) !important;
+}
+
+.MuiCardHeader-title {
+  font-family: 'FinancierDisplay', sans-serif !important;
+  font-weight: 600 !important;
+}
+
+/* Dialog Components */
+.MuiDialog-paper {
+  background-color: var(--cbre-white) !important;
+  border: 2px solid var(--cbre-light) !important;
+}
+
+.MuiDialogTitle-root {
+  background-color: var(--cbre-primary) !important;
+  color: var(--cbre-white) !important;
+  font-family: 'FinancierDisplay', sans-serif !important;
+  font-weight: 600 !important;
+}
+
+.MuiDialogContent-root {
+  color: var(--cbre-neutral) !important;
+  font-family: 'FinancierDisplay', sans-serif !important;
+}
+
+/* Tooltip Components */
+.MuiTooltip-tooltip {
+  background-color: var(--cbre-primary) !important;
+  color: var(--cbre-white) !important;
+  font-family: 'FinancierDisplay', sans-serif !important;
+}
+
+/* Snackbar Components */
+.MuiSnackbar-root .MuiAlert-root {
+  font-family: 'FinancierDisplay', sans-serif !important;
+}
+
+/* Avatar Components */
+.MuiAvatar-root {
+  background-color: var(--cbre-primary) !important;
+  color: var(--cbre-white) !important;
+  font-family: 'FinancierDisplay', sans-serif !important;
+  font-weight: 600 !important;
+}
+
+/* Tab Components */
+.MuiTabs-root {
+  background-color: var(--cbre-white) !important;
+  border-bottom: 2px solid var(--cbre-light) !important;
+}
+
+.MuiTab-root {
+  color: var(--cbre-neutral) !important;
+  font-family: 'FinancierDisplay', sans-serif !important;
+  font-weight: 500 !important;
+}
+
+.MuiTab-root.Mui-selected {
+  color: var(--cbre-primary) !important;
+}
+
+.MuiTabs-indicator {
+  background-color: var(--cbre-primary) !important;
+}

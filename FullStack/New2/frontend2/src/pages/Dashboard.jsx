@@ -1,5 +1,5 @@
 import { useAuth } from "../context/AuthContext";
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from '../api/axios';
 import { colors } from '../utils/colors';
@@ -8,7 +8,7 @@ import { loadImageFromStatic } from "../utils/profilePicUtils";
 
 function Dashboard() {
  
-    const { user } = useAuth();
+    const { user, loading: authLoading } = useAuth();
     const navigate = useNavigate();
     const [stats, setStats] = useState({
         totalUsers: 0,
@@ -16,6 +16,13 @@ function Dashboard() {
         adminUsers: 0
     });
     const [loading, setLoading] = useState(false);
+    const [imageError, setImageError] = useState(false);
+    const hasInitiallyFetched = useRef(false);
+
+    useEffect(() => {
+        // Reset image error when user changes
+        setImageError(false);
+    }, [user?.profile_pic]);
 
     useEffect(() => {
         // Fetch dashboard stats when component mounts
@@ -39,10 +46,11 @@ function Dashboard() {
             }
         };
 
-        if (user?.role?.name === 'admin') {
+        if (!authLoading && user?.role?.name === 'admin' && !hasInitiallyFetched.current) {
+            hasInitiallyFetched.current = true;
             fetchStats();
         }
-    }, [user?.role?.name]);
+    }, [authLoading, user?.role?.name]); // Only re-run when auth loading finishes or role changes
 
     if (!user) {
         return (
@@ -68,22 +76,18 @@ function Dashboard() {
             <div style={welcomeCardStyles}>
                 <div style={userInfoStyles}>
                     <div style={avatarStyles}>
-                        {user.profile_pic ? (
+                        {user.profile_pic && !imageError ? (
                             <img 
                                 src={loadImageFromStatic(user.profile_pic)} 
                                 alt="Profile" 
-                                style={avatarStyles}
-                                onError={(e) => {
-                                    e.target.style.display = 'none';
-                                    e.target.nextSibling.style.display = 'flex';
-                                }}
+                                style={avatarImageStyles}
+                                onError={() => setImageError(true)}
                             />
-                        ) : 
-                        <div style={profileInitialStyles}>
-                            {user.first_name?.[0]?.toUpperCase() + user.last_name?.[0]?.toUpperCase() || 'U'}
-                        </div>
-                        }
-                        
+                        ) : (
+                            <div style={profileInitialStyles}>
+                                {user.first_name?.[0]?.toUpperCase() + user.last_name?.[0]?.toUpperCase() || 'U'}
+                            </div>
+                        )}
                     </div>
                     <div style={userDetailsStyles}>
                         <h2 style={userNameStyles}>{user.first_name} {user.last_name}</h2>
@@ -229,12 +233,20 @@ const avatarStyles = {
     alignItems: 'center',
     justifyContent: 'center',
     fontWeight: 'bold',
-    fontSize: '2rem'
+    fontSize: '2rem',
+    overflow: 'hidden'
+};
+
+const avatarImageStyles = {
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
+    borderRadius: '50%'
 };
 
 const profileInitialStyles = {
-    width: '35px',
-    height: '35px',
+    width: '100%',
+    height: '100%',
     borderRadius: '50%',
     backgroundColor: colors.primary.brightGreen,
     color: colors.primary.darkGreen,
