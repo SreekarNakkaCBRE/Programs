@@ -3,77 +3,39 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { colors } from '../utils/colors';
 import { useSnackbar } from 'notistack';
-import { CheckCircle, Error } from '@mui/icons-material';
+import { showSuccess, showError } from '../utils/snackbar';
+import { useFormValidation } from '../utils/validation';
+import FormField from '../components/FormField';
 
 
 function Login() {
-    const [form, setForm] = useState({
-        email: '',
-        password: ''
-    });
     const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState('');
     const navigate = useNavigate();
     const { login } = useAuth();
     const { enqueueSnackbar } = useSnackbar();
 
-
-    const handleChange = (e) => {
-        setForm({
-            ...form, 
-            [e.target.name]: e.target.value
-        });
-        if (error) setError(''); // Clear error when user starts typin
-    };
+    // Use the custom validation hook
+    const {
+        form,
+        errors,
+        handleChange,
+        handleBlur
+    } = useFormValidation({
+        email: '',
+        password: ''
+    }, 'login');
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsLoading(true);
-        setError('');
         
         try {
-            // Send plain password - backend handles hashing and verification
             await login(form.email, form.password);
-            
-            // Show success message with Material-UI styling
-            enqueueSnackbar('Login successful! Welcome back.', { 
-                variant: 'success',
-                autoHideDuration: 3000,
-                anchorOrigin: {
-                    vertical: 'bottom',
-                    horizontal: 'left',
-                },
-                style: {
-                    backgroundColor: '#4caf50',
-                    color: '#fff',
-                    fontWeight: '500',
-                },
-                iconVariant: {
-                    success: <CheckCircle style={{ marginRight: 8 }} />
-                }
-            });
-
+            showSuccess(enqueueSnackbar, 'Login successful! Welcome back.');
             navigate('/dashboard');
         } catch (error) {
             const errorMessage = error.response?.data?.detail || 'Login failed. Please check your credentials.';
-            // Show error message in snackbar with Material-UI styling
-            enqueueSnackbar(errorMessage, { 
-                variant: 'error',
-                autoHideDuration: 5000,
-                anchorOrigin: {
-                    vertical: 'bottom',
-                    horizontal: 'left',
-                },
-                style: {
-                    backgroundColor: '#f44336',
-                    color: '#fff',
-                    fontWeight: '500',
-                },
-                iconVariant: {
-                    error: <Error style={{ marginRight: 8 }} />
-                }
-            });
-            
+            showError(enqueueSnackbar, errorMessage);
             console.error('Error during login:', error);
         } finally {
             setIsLoading(false);
@@ -89,37 +51,30 @@ function Login() {
                 </div>
                 
                 <form onSubmit={handleSubmit} style={formStyles}>
-                    {error && (
-                        <div style={errorStyles}>
-                            {error}
-                        </div>
-                    )}
                     
-                    <div style={fieldGroupStyles}>
-                        <label style={labelStyles}>Email Address</label>
-                        <input
-                            name="email"
-                            type="email"
-                            placeholder="Enter your email"
-                            value={form.email}
-                            onChange={handleChange}
-                            style={inputStyles}
-                            required
-                        />
-                    </div>
+                    <FormField
+                        label="Email Address"
+                        name="email"
+                        type="email"
+                        value={form.email}
+                        onChange={handleChange}
+                        onBlur={() => handleBlur('email')}
+                        error={errors.email}
+                        placeholder="Enter your email"
+                        required
+                    />
                     
-                    <div style={fieldGroupStyles}>
-                        <label style={labelStyles}>Password</label>
-                        <input
-                            name="password"
-                            type="password"
-                            placeholder="Enter your password"
-                            value={form.password}
-                            onChange={handleChange}
-                            style={inputStyles}
-                            required
-                        />
-                    </div>
+                    <FormField
+                        label="Password"
+                        name="password"
+                        type="password"
+                        value={form.password}
+                        onChange={handleChange}
+                        onBlur={() => handleBlur('password')}
+                        error={errors.password}
+                        placeholder="Enter your password"
+                        required
+                    />
                     
                     <button 
                         type="submit" 
@@ -151,16 +106,22 @@ function Login() {
 }
 
 const containerStyles = {
-    minHeight: '95vh',
-    backgroundColor: colors.secondary.lightGreen,
+    minHeight: '100vh',
+    backgroundColor: '#C0D4CB', // Fallback color
+    backgroundImage: 'url("/bg1.jpg")',
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    backgroundRepeat: 'no-repeat',
+    backgroundAttachment: 'fixed',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     padding: '1rem'
+    
 };
 
 const cardStyles = {
-    backgroundColor: colors.white,
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
     borderRadius: '12px',
     boxShadow: '0 8px 24px rgba(0, 63, 45, 0.15)',
     padding: '2rem',
@@ -191,29 +152,6 @@ const formStyles = {
     marginBottom: '1.5rem'
 };
 
-const fieldGroupStyles = {
-    marginBottom: '1.5rem'
-};
-
-const labelStyles = {
-    display: 'block',
-    marginBottom: '0.5rem',
-    color: colors.primary.darkGreen,
-    fontWeight: '500',
-    fontSize: '0.9rem'
-};
-
-const inputStyles = {
-    width: '100%',
-    padding: '0.75rem',
-    border: `2px solid ${colors.secondary.paleGray}`,
-    borderRadius: '8px',
-    fontSize: '1rem',
-    backgroundColor: colors.white,
-    transition: 'border-color 0.3s ease',
-    boxSizing: 'border-box'
-};
-
 const buttonStyles = {
     width: '100%',
     padding: '0.875rem',
@@ -233,16 +171,6 @@ const disabledButtonStyles = {
     cursor: 'not-allowed'
 };
 
-const errorStyles = {
-    backgroundColor: '#fee',
-    color: colors.danger,
-    padding: '0.75rem',
-    borderRadius: '6px',
-    marginBottom: '1rem',
-    fontSize: '0.9rem',
-    border: `1px solid ${colors.danger}`
-};
-
 const footerStyles = {
     textAlign: 'center',
     paddingTop: '1rem',
@@ -258,7 +186,7 @@ const linkTextStyles = {
 const linkButtonStyles = {
     background: 'none',
     border: 'none',
-    color: colors.primary.brightGreen,
+    color: colors.primary.gray,
     textDecoration: 'underline',
     cursor: 'pointer',
     fontSize: '0.9rem',

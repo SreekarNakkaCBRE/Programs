@@ -2,55 +2,54 @@ import { useAuth } from '../context/AuthContext';
 import { useState, useRef } from 'react';
 import axios from '../api/axios';
 import { colors } from '../utils/colors';
-import { saveImageToStatic, loadImageFromStatic } from '../utils/profilePicUtils';
-import Button from '@mui/material/Button';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogContentText from '@mui/material/DialogContentText';
-import DialogTitle from '@mui/material/DialogTitle';
-import Snackbar from '@mui/material/Snackbar';
-import Alert from '@mui/material/Alert';
+import { getImageUrl } from '../config/api';
+import { useSnackbar } from 'notistack';
+import { showSuccess, showError } from '../utils/snackbar';
+import { ConfirmationDialog } from '../utils/dialog';
+import { useFormValidation } from '../utils/validation';
+import FormField from '../components/FormField';
+import {
+    pageContainer
+} from '../utils/commonStyles';
 
 function Profile() {
     const { user, setUser } = useAuth();
+    const { enqueueSnackbar } = useSnackbar();
     const [isEditing, setIsEditing] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [profilePicFile, setProfilePicFile] = useState(null);
     const [profilePicPreview, setProfilePicPreview] = useState(null);
     const [dialogOpen, setDialogOpen] = useState(false);
-    const [snackbarOpen, setSnackbarOpen] = useState(false);
-    const [snackbarMessage, setSnackbarMessage] = useState('');
-    const [snackbarSeverity, setSnackbarSeverity] = useState('success');
     const fileInputRef = useRef(null);
-    const [formData, setFormData] = useState({
+    
+    // Use the custom validation hook for profile
+    const {
+        form: formData,
+        errors,
+        handleChange: handleInputChange,
+        handleBlur,
+        validateAllFields,
+        updateForm
+    } = useFormValidation({
         first_name: user?.first_name || '',
         last_name: user?.last_name || '',
         contact_number: user?.contact_number || '',
         address: user?.address || ''
-    });
-
-    const handleInputChange = (e) => {
-        setFormData({
-            ...formData,
-            [e.target.name]: e.target.value
-        });
-        if (error) setError('');
-    };
+    }, 'profile');
 
     const handleProfilePicChange = (e) => {
         const file = e.target.files[0];
         if (file) {
             // Validate file type
             if (!file.type.startsWith('image/')) {
-                setError('Please select an image file');
+                showError(enqueueSnackbar, 'Please select a valid image file (JPEG, PNG, etc.)');
                 return;
             }
             
             // Validate file size (max 5MB)
             if (file.size > 5 * 1024 * 1024) {
-                setError('Image size should be less than 5MB');
+                showError(enqueueSnackbar, 'File size must be less than 5MB');
                 return;
             }
 
@@ -79,48 +78,49 @@ function Profile() {
 
     const handleSave = async () => {
         try {
+            // Validate form before submission
+            if (!validateAllFields()) {
+                showError(enqueueSnackbar, 'Please fix the errors');
+                return;
+            }
+            
             setLoading(true);
             setError('');
 
-            // Update profile data
-            await axios.put('/users/Update_my_profile', formData);
-
-            // Update user context with new form data
-            setUser(prev => ({
-                ...prev,
-                first_name: formData.first_name,
-                last_name: formData.last_name,
-                contact_number: formData.contact_number,
-                address: formData.address
-            }));
-
-            // Save profile picture to static folder if selected
+            // Prepare form data including profile picture
+            const updateData = { ...formData };
+            
+            // If a new profile picture is selected, convert to base64
             if (profilePicFile) {
-                try {
-                    const fileName = `profile_${user.id}_${Date.now()}.${profilePicFile.name.split('.').pop()}`;
-                    const staticImageUrl = await saveImageToStatic(profilePicFile, fileName);
-                    
-                    // Update user context with static file path
-                    setUser(prev => ({
-                        ...prev,
-                        profile_pic: staticImageUrl
-                    }));
-                } catch (picError) {
-                    console.error('Profile picture save failed:', picError);
-                    setError('Profile updated but profile picture save failed');
-                }
+                const base64Data = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => resolve(e.target.result);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(profilePicFile);
+                });
+                updateData.profile_pic = base64Data;
             }
 
-            // Show success snackbar
-            setSnackbarMessage('Profile updated successfully!');
-            setSnackbarSeverity('success');
-            setSnackbarOpen(true);
+            // Update profile data (including profile picture if provided)
+            const response = await axios.put('/users/Update_my_profile', updateData);
+
+            // Update user context with response data
+            setUser(prev => ({
+                ...prev,
+                first_name: updateData.first_name,
+                last_name: updateData.last_name,
+                contact_number: updateData.contact_number,
+                address: updateData.address,
+                ...(response.data.user.profile_pic && { profile_pic: response.data.user.profile_pic })
+            }));
+
+            showSuccess(enqueueSnackbar, 'Profile updated successfully!');
             
             setIsEditing(false);
             setProfilePicFile(null);
             setProfilePicPreview(null);
         } catch (error) {
-            setError('Error updating profile. Please try again.');
+            showError(enqueueSnackbar, 'Error updating profile. Please try again.');
             console.error('Error updating profile:', error);
         } finally {
             setLoading(false);
@@ -140,15 +140,8 @@ function Profile() {
         handleSave();
     };
 
-    const handleSnackbarClose = (event, reason) => {
-        if (reason === 'clickaway') {
-            return;
-        }
-        setSnackbarOpen(false);
-    };
-
     const handleCancel = () => {
-        setFormData({
+        updateForm({
             first_name: user?.first_name || '',
             last_name: user?.last_name || '',
             contact_number: user?.contact_number || '',
@@ -165,14 +158,14 @@ function Profile() {
 
     if (!user) {
         return (
-            <div style={containerStyles}>
+            <div style={pageContainer}>
                 <div style={loadingStyles}>Loading...</div>
             </div>
         );
     }
 
     return (
-        <div style={containerStyles}>
+        <div style={pageContainer}>
             <div style={headerStyles}>
                 <h1 style={titleStyles}>My Profile</h1>
                 <p style={subtitleStyles}>Manage your personal information</p>
@@ -184,7 +177,7 @@ function Profile() {
                         <div style={avatarStyles}>
                             {user.profile_pic ? (
                                 <img 
-                                    src={loadImageFromStatic(user.profile_pic)} 
+                                    src={getImageUrl(user.profile_pic)} 
                                     alt="Profile" 
                                     style={profileImageStyles}
                                 />
@@ -218,12 +211,13 @@ function Profile() {
                         <div style={fieldGroupStyles}>
                             <label style={labelStyles}>First Name</label>
                             {isEditing ? (
-                                <input
-                                    type="text"
+                                <FormField
                                     name="first_name"
                                     value={formData.first_name}
                                     onChange={handleInputChange}
-                                    style={inputStyles}
+                                    onBlur={() => handleBlur('first_name')}
+                                    error={errors.first_name}
+                                    style={{margin: 0}}
                                 />
                             ) : (
                                 <span style={valueStyles}>{user.first_name}</span>
@@ -233,12 +227,13 @@ function Profile() {
                         <div style={fieldGroupStyles}>
                             <label style={labelStyles}>Last Name</label>
                             {isEditing ? (
-                                <input
-                                    type="text"
+                                <FormField
                                     name="last_name"
                                     value={formData.last_name}
                                     onChange={handleInputChange}
-                                    style={inputStyles}
+                                    onBlur={() => handleBlur('last_name')}
+                                    error={errors.last_name}
+                                    style={{margin: 0}}
                                 />
                             ) : (
                                 <span style={valueStyles}>{user.last_name}</span>
@@ -256,13 +251,17 @@ function Profile() {
                     <div style={fieldGroupStyles}>
                         <label style={labelStyles}>Contact Number</label>
                         {isEditing ? (
-                            <input
-                                type="tel"
+                            <FormField
                                 name="contact_number"
+                                type="tel"
                                 value={formData.contact_number}
                                 onChange={handleInputChange}
-                                style={inputStyles}
-                                placeholder="Enter your phone number"
+                                onBlur={() => handleBlur('contact_number')}
+                                error={errors.contact_number}
+                                placeholder="Enter 10-digit mobile number"
+                                maxLength={10}
+                                hint="10-digit mobile number (starts with 6-9)"
+                                style={{margin: 0}}
                             />
                         ) : (
                             <span style={valueStyles}>{user.contact_number || 'Not provided'}</span>
@@ -272,12 +271,15 @@ function Profile() {
                     <div style={fieldGroupStyles}>
                         <label style={labelStyles}>Address</label>
                         {isEditing ? (
-                            <textarea
+                            <FormField
                                 name="address"
                                 value={formData.address}
                                 onChange={handleInputChange}
-                                style={{...inputStyles, minHeight: '80px', resize: 'vertical'}}
+                                onBlur={() => handleBlur('address')}
+                                error={errors.address}
                                 placeholder="Enter your address"
+                                isTextarea
+                                style={{margin: 0}}
                             />
                         ) : (
                             <span style={valueStyles}>{user.address || 'Not provided'}</span>
@@ -313,7 +315,7 @@ function Profile() {
                                             />
                                         ) : user.profile_pic ? (
                                             <img 
-                                                src={loadImageFromStatic(user.profile_pic)} 
+                                                src={getImageUrl(user.profile_pic)} 
                                                 alt="Profile" 
                                                 style={previewImageStyles}
                                             />
@@ -381,81 +383,17 @@ function Profile() {
             </div>
 
             {/* Confirmation Dialog */}
-            <Dialog
-            sx={{
-                    '& .MuiDialog-paper': {
-                    borderRadius: '12px',
-                    backgroundColor: colors.secondary.lightGreen,
-                    boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-                    minWidth: '400px',
-                    },
-                }}
+            <ConfirmationDialog
                 open={dialogOpen}
                 onClose={handleClose}
-                aria-labelledby="save-confirmation-dialog-title"
-                aria-describedby="save-confirmation-dialog-description"
-            >
-                <DialogTitle id="save-confirmation-dialog-title">
-                    {"Confirm Save Changes?"}
-                </DialogTitle>
-                <DialogContent>
-                    <DialogContentText id="save-confirmation-dialog-description">
-                        Are you sure you want to save your profile changes? This action will update your personal information.
-                    </DialogContentText>
-                </DialogContent>
-                <DialogActions>
-                    <Button 
-                    sx={{
-                            marginRight: '8px',
-                            backgroundColor: colors.secondary.mediumGreen,
-                            color: colors.white,
-                            '&:hover': {
-                                backgroundColor: colors.secondary.darkGray,
-                            },
-                            borderRadius: '8px',
-                        }}
-                    onClick={handleClose} color="secondary">
-                        Cancel
-                    </Button>
-                    <Button
-                    sx={{ 
-                            marginRight: '8px',
-                            backgroundColor: colors.primary.brightGreen,
-                            color: colors.white,
-                            '&:hover': {
-                                backgroundColor: colors.primary.darkGreen,
-                            },
-                            borderRadius: '8px',
-                        }}
-                    onClick={handleConfirmSave} color="primary" autoFocus>
-                        Yes, Save Changes
-                    </Button>
-                </DialogActions>
-            </Dialog>
-
-            {/* Success Snackbar */}
-            <Snackbar
-                open={snackbarOpen}
-                autoHideDuration={3000}
-                onClose={handleSnackbarClose}
-                anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-            >
-                <Alert
-                    onClose={handleSnackbarClose}
-                    severity={snackbarSeverity}
-                    variant="filled"
-                    sx={{ width: '100%' }}
-                >
-                    {snackbarMessage}
-                </Alert>
-            </Snackbar>
+                onConfirm={handleConfirmSave}
+                title="Confirm Save Changes?"
+                message="Are you sure you want to save your profile changes? This action will update your personal information."
+                confirmText="Yes, Save Changes"
+            />
         </div>
     );
 }
-
-const containerStyles = {
-    padding: '1rem'
-};
 
 const headerStyles = {
     marginBottom: '2rem'
@@ -561,14 +499,6 @@ const valueStyles = {
     padding: '0.75rem 0'
 };
 
-const inputStyles = {
-    padding: '0.75rem',
-    border: `2px solid ${colors.secondary.paleGray}`,
-    borderRadius: '8px',
-    fontSize: '1rem',
-    backgroundColor: colors.white,
-    transition: 'border-color 0.3s ease'
-};
 
 const roleTagStyles = {
     display: 'inline-block',
@@ -576,7 +506,7 @@ const roleTagStyles = {
     borderRadius: '20px',
     fontSize: '0.9rem',
     fontWeight: '600',
-    textTransform: 'uppercase',
+    
     letterSpacing: '0.5px',
     width: 'fit-content',
     whiteSpace: 'nowrap'

@@ -1,6 +1,5 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import axios from "../api/axios";
-import { ensureProfilePicAvailable } from "../utils/profilePicUtils";
 
 const AuthContext = createContext();
 
@@ -19,8 +18,7 @@ export const AuthProvider = ({ children }) => {
             headers: { Authorization: `Bearer ${response.data.access_token}` }
         });
 
-        const userData = ensureProfilePicAvailable(profile.data.user);
-        setUser(userData);
+        setUser(profile.data.user);
     };
 
     const logout = () => {
@@ -37,8 +35,7 @@ export const AuthProvider = ({ children }) => {
                 headers: { Authorization: `Bearer ${token}` } 
             })
                 .then(response => {
-                    const userData = ensureProfilePicAvailable(response.data.user);
-                    setUser(userData);
+                    setUser(response.data.user);
                 })
                 .catch(() => logout())
                 .finally(() => setLoading(false));
@@ -48,8 +45,7 @@ export const AuthProvider = ({ children }) => {
     }, []);
 
     const updateUser = (userData) => {
-        const updatedUser = ensureProfilePicAvailable(userData);
-        setUser(updatedUser);
+        setUser(userData);
     };
 
     return (

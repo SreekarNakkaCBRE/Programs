@@ -9,7 +9,7 @@ class SignupRequest(BaseModel):
     contact_number: Optional[str] = None
     address: Optional[str] = None   
     profile_pic: Optional[str] = None
-    role_id : int = Field(default=2, description="Role ID for the user, default is 2 (User role)")
+    role_id: int = Field(default=2, description="Role ID for the user, default is 2 (User role)")
 
 class LoginRequest(BaseModel):
     email: EmailStr

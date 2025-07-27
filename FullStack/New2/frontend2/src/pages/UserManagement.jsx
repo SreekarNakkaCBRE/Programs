@@ -1,16 +1,23 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import axios from '../api/axios';
 import { colors } from '../utils/colors';
-import Button from '@mui/material/Button';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogContentText from '@mui/material/DialogContentText';
-import DialogTitle from '@mui/material/DialogTitle';
 import { useSnackbar } from 'notistack';
-import { CheckCircle, Error } from '@mui/icons-material';
+import { showSuccess, showError } from '../utils/snackbar';
+import { ConfirmationDialog } from '../utils/dialog';
+import {
+    pageContainer,
+    pageHeader,
+    pageTitle,
+    pageSubtitle,
+    loadingText,
+    card,
+    sectionTitle,
+    gridAuto,
+    statTitle,
+    statNumber
+} from '../utils/commonStyles';
 
 
 function AdminPanel() {
@@ -18,7 +25,6 @@ function AdminPanel() {
     const navigate = useNavigate();
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
     const [updatingRole, setUpdatingRole] = useState(null);
     const [updatingStatus, setUpdatingStatus] = useState(null);
     const [showEditModal, setShowEditModal] = useState(false);
@@ -49,19 +55,18 @@ function AdminPanel() {
     }, [user, navigate]);
 
     // Fetch users function
-    const fetchUsers = async () => {
+    const fetchUsers = useCallback(async () => {
         try {
             setLoading(true);
             const response = await axios.get('/users/list');
             setUsers(response.data.users || []);
-            setError(''); // Clear any previous errors
         } catch (error) {
-            setError('Failed to fetch users');
+            showError(enqueueSnackbar, 'Failed to fetch users');
             console.error('Error fetching users:', error);
         } finally {
             setLoading(false);
         }
-    };
+    }, [enqueueSnackbar]);
 
     // Fetch users list
     useEffect(() => {
@@ -69,7 +74,7 @@ function AdminPanel() {
             hasInitiallyFetched.current = true;
             fetchUsers();
         }
-    }, [authLoading, user?.role?.name]); // Only re-run when auth loading finishes or role changes
+    }, [authLoading, user?.role?.name, fetchUsers]); // Added fetchUsers to dependency array
 
     const handleRoleUpdate = async (userId, newRoleId) => {
         setUpdatingRole(userId);
@@ -83,88 +88,23 @@ function AdminPanel() {
                     : u
             ));
             
-            enqueueSnackbar('Role updated successfully!', { 
-                variant: 'success',
-                autoHideDuration: 3000,
-                 anchorOrigin: {
-                    vertical: 'top',
-                    horizontal: 'center',
-                },
-                
-                style: {
-                    backgroundColor: '#4caf50',
-                    color: '#fff',
-                    fontWeight: '500',
-                },
-                iconVariant: {
-                    success: <CheckCircle style={{ marginRight: 8 }} />
-                }
-            });
+            showSuccess(enqueueSnackbar, 'Role updated successfully!');
         } catch (error) {
-            enqueueSnackbar('Failed to update role', { 
-                variant: 'error',
-                autoHideDuration: 3000,
-                anchorOrigin: {
-                    vertical: 'top',
-                    horizontal: 'center',
-                },
-                style: {
-                    backgroundColor: '#f44336',
-                    color: '#fff',
-                    fontWeight: '500',
-                },
-                iconVariant: {
-                    error: <Error style={{ marginRight: 8 }} />
-                }
-            });
+            showError(enqueueSnackbar, 'Failed to update role');
             console.error('Error updating role:', error);
         } finally {
             setUpdatingRole(null);
         }
     };
 
-    const handleStatusToggle = async (userId, currentStatus) => {
+    const handleStatusToggle = async (userId) => {
         setUpdatingStatus(userId);
         try {
-            const token = localStorage.getItem('token');
-            await axios.put(`/users/${userId}/status`, {}, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            enqueueSnackbar('Status updated successfully!', { 
-                variant: 'success',
-                autoHideDuration: 3000,
-                 anchorOrigin: {
-                    vertical: 'top',
-                    horizontal: 'center',
-                },
-                
-                style: {
-                    backgroundColor: '#4caf50',
-                    color: '#fff',
-                    fontWeight: '500',
-                },
-                iconVariant: {
-                    success: <CheckCircle style={{ marginRight: 8 }} />
-                }
-            })
+            await axios.put(`/users/${userId}/status`);
+            showSuccess(enqueueSnackbar, 'Status updated successfully!');
             await fetchUsers();
         } catch (error) {
-            enqueueSnackbar('Failed to update status', { 
-                variant: 'error',
-                autoHideDuration: 3000,
-                anchorOrigin: {
-                    vertical: 'top',
-                    horizontal: 'center',
-                },
-                style: {
-                    backgroundColor: '#f44336',
-                    color: '#fff',
-                    fontWeight: '500',
-                },
-                iconVariant: {
-                    error: <Error style={{ marginRight: 8 }} />
-                }
-            });
+            showError(enqueueSnackbar, 'Failed to update status');
             console.error('Error updating status:', error);
         } finally {
             setUpdatingStatus(null);
@@ -183,7 +123,7 @@ function AdminPanel() {
 
     const handleConfirmStatusToggle = () => {
         if (userToToggle) {
-            handleStatusToggle(userToToggle.id, userToToggle.is_active);
+            handleStatusToggle(userToToggle.id);
         }
         setDialogOpen(false);
         setUserToToggle(null);
@@ -219,8 +159,6 @@ function AdminPanel() {
             address: ''
         });
         const [isLoading, setIsLoading] = useState(false);
-        const [modalError, setModalError] = useState('');
-        const [modalSuccess, setModalSuccess] = useState('');
 
         useEffect(() => {
             if (userData) {
@@ -231,8 +169,6 @@ function AdminPanel() {
                     contact_number: userData.contact_number || '',
                     address: userData.address || ''
                 });
-                setModalError('');
-                setModalSuccess('');
             }
         }, [userData]);
 
@@ -241,28 +177,31 @@ function AdminPanel() {
                 ...formData,
                 [e.target.name]: e.target.value
             });
-            if (modalError) setModalError('');
-            if (modalSuccess) setModalSuccess('');
         };
 
         const handleSubmit = async (e) => {
             e.preventDefault();
             setIsLoading(true);
-            setModalError('');
             
             try {
                 await axios.put(`/users/${userData.id}`, formData);
-                setModalSuccess('User updated successfully!');
+                showSuccess(enqueueSnackbar, 'User updated successfully!');
                 
                 // Update the users list
                 await fetchUsers();
                 
+                // Add smooth transition with fade effect
+                const modalElement = document.querySelector('[data-modal-content]');
+                if (modalElement) {
+                    modalElement.style.opacity = '0';
+                    modalElement.style.transform = 'scale(0.95)';
+                }
+                
                 setTimeout(() => {
                     onClose();
-                    setModalSuccess('');
-                }, 1500);
+                }, 300);
             } catch (error) {
-                setModalError('Failed to update user');
+                showError(enqueueSnackbar, 'Failed to update user');
                 console.error('Error updating user:', error);
             } finally {
                 setIsLoading(false);
@@ -277,8 +216,6 @@ function AdminPanel() {
                 contact_number: userData?.contact_number || '',
                 address: userData?.address || ''
             });
-            setModalError('');
-            setModalSuccess('');
             onClose();
         };
 
@@ -286,25 +223,13 @@ function AdminPanel() {
 
         return (
             <div style={modalOverlayStyles}>
-                <div style={modalContentStyles}>
+                <div style={modalContentStyles} data-modal-content>
                     <div style={modalHeaderStyles}>
                         <h2 style={modalTitleStyles}>Edit User Profile</h2>
                         <button style={modalCloseButtonStyles} onClick={handleCancel}>
                             ×
                         </button>
                     </div>
-
-                    {modalError && (
-                        <div style={modalErrorStyles}>
-                            {modalError}
-                        </div>
-                    )}
-
-                    {modalSuccess && (
-                        <div style={modalSuccessStyles}>
-                            {modalSuccess}
-                        </div>
-                    )}
 
                     <form onSubmit={handleSubmit} style={modalFormStyles}>
                         <div style={modalFieldRowStyles}>
@@ -356,6 +281,7 @@ function AdminPanel() {
                                 value={formData.contact_number}
                                 onChange={handleChange}
                                 placeholder="Enter contact number"
+                                maxLength={10}
                             />
                         </div>
 
@@ -369,6 +295,8 @@ function AdminPanel() {
                                 placeholder="Enter address"
                             />
                         </div>
+
+
 
                         <div style={modalButtonGroupStyles}>
                             <button 
@@ -399,7 +327,7 @@ function AdminPanel() {
 
     if (!user || user.role?.name !== 'admin') {
         return (
-            <div style={containerStyles}>
+            <div style={pageContainer}>
                 <h1>Access Denied</h1>
                 <p>You don't have permission to access this page.</p>
             </div>
@@ -408,52 +336,46 @@ function AdminPanel() {
 
     if (loading) {
         return (
-            <div style={containerStyles}>
-                <div style={loadingStyles}>Loading users...</div>
+            <div style={pageContainer}>
+                <div style={loadingText}>Loading users...</div>
             </div>
         );
     }
 
     return (
-        <div style={containerStyles}>
-            <div style={headerStyles}>
-                <h1 style={titleStyles}>Admin Panel</h1>
-                <p style={subtitleStyles}>Manage users and system settings</p>
+        <div style={pageContainer}>
+            <div style={pageHeader}>
+                <h1 style={pageTitle}>Admin Panel</h1>
+                <p style={pageSubtitle}>Manage users and system settings</p>
             </div>
 
-            {error && (
-                <div style={errorStyles}>
-                    {error}
+            <div style={gridAuto('200px')}>
+                <div style={card}>
+                    <h3 style={statTitle}>Total Users</h3>
+                    <p style={statNumber}>{users.length}</p>
                 </div>
-            )}
-
-            <div style={statsContainerStyles}>
-                <div style={statCardStyles}>
-                    <h3 style={statTitleStyles}>Total Users</h3>
-                    <p style={statNumberStyles}>{users.length}</p>
-                </div>
-                <div style={statCardStyles}>
-                    <h3 style={statTitleStyles}>Admin Users</h3>
-                    <p style={statNumberStyles}>
+                <div style={card}>
+                    <h3 style={statTitle}>Admin Users</h3>
+                    <p style={statNumber}>
                         {users.filter(u => u.role?.name === 'admin').length}
                     </p>
                 </div>
-                <div style={statCardStyles}>
-                    <h3 style={statTitleStyles}>Standard Users</h3>
-                    <p style={statNumberStyles}>
+                <div style={card}>
+                    <h3 style={statTitle}>Standard Users</h3>
+                    <p style={statNumber}>
                         {users.filter(u => u.role?.name === 'user').length}
                     </p>
                 </div>
-                <div style={statCardStyles}>
-                    <h3 style={statTitleStyles}>Active Users</h3>
-                    <p style={statNumberStyles}>
+                <div style={card}>
+                    <h3 style={statTitle}>Active Users</h3>
+                    <p style={statNumber}>
                         {users.filter(u => u.is_active).length}
                     </p>
                 </div>
             </div>
 
             <div style={usersTableContainerStyles}>
-                <h2 style={sectionTitleStyles}>Users Management</h2>
+                <h2 style={sectionTitle}>Users Management</h2>
                 
                 <div style={tableContainerStyles}>
                     <table style={tableStyles}>
@@ -575,208 +497,36 @@ function AdminPanel() {
             />
 
             {/* Status Toggle Confirmation Dialog */}
-            <Dialog
-                sx={{
-                    '& .MuiDialog-paper': {
-                    borderRadius: '12px',
-                    backgroundColor: colors.secondary.lightGreen,
-                    boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-                    minWidth: '400px',
-                    },
-                }}
-
+            <ConfirmationDialog
                 open={dialogOpen}
                 onClose={handleDialogClose}
-                aria-labelledby="status-confirmation-dialog-title"
-                aria-describedby="status-confirmation-dialog-description"
-            >
-                <DialogTitle id="status-confirmation-dialog-title">
-                    {userToToggle?.is_active ? "Deactivate User?" : "Activate User?"}
-                </DialogTitle>
-                <DialogContent>
-                    <DialogContentText id="status-confirmation-dialog-description">
-                        {userToToggle?.is_active 
-                            ? `Are you sure you want to deactivate ${userToToggle?.first_name} ${userToToggle?.last_name}? This user will no longer be able to access the system.`
-                            : `Are you sure you want to activate ${userToToggle?.first_name} ${userToToggle?.last_name}? This user will be able to access the system again.`
-                        }
-                    </DialogContentText>
-                </DialogContent>
-                <DialogActions>
-                    <Button
-                        sx={{
-                            marginRight: '8px',
-                            backgroundColor: colors.secondary.mediumGreen,
-                            color: colors.white,
-                            '&:hover': {
-                                backgroundColor: colors.secondary.darkGray,
-                            },
-                            borderRadius: '8px',
-                        }}
-                        onClick={handleDialogClose} color="secondary">
-                        Cancel
-                    </Button>
-                    <Button
-                    sx={{ 
-                        marginRight: '8px',
-                        backgroundColor: colors.primary.brightGreen,
-                        color: colors.white,
-                        '&:hover': {
-                            backgroundColor: colors.primary.darkGreen,
-                        },
-                        borderRadius: '8px',
-                    }}
-                    onClick={handleConfirmStatusToggle} color="primary" autoFocus>
-                        {userToToggle?.is_active ? "Yes, Deactivate" : "Yes, Activate"}
-                    </Button>
-                </DialogActions>
-            </Dialog>
+                onConfirm={handleConfirmStatusToggle}
+                title={userToToggle?.is_active ? "Deactivate User?" : "Activate User?"}
+                message={userToToggle?.is_active 
+                    ? `Are you sure you want to deactivate ${userToToggle?.first_name} ${userToToggle?.last_name}? This user will no longer be able to access the system.`
+                    : `Are you sure you want to activate ${userToToggle?.first_name} ${userToToggle?.last_name}? This user will be able to access the system again.`
+                }
+                confirmText={userToToggle?.is_active ? "Yes, Deactivate" : "Yes, Activate"}
+            />
 
             {/* Role Update Confirmation Dialog */}
-            <Dialog
-                sx={{
-                    '& .MuiDialog-paper': {
-                        borderRadius: '12px',
-                        backgroundColor: colors.secondary.lightGreen,
-                        boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-                        minWidth: '400px',
-                    },
-                }}
+            <ConfirmationDialog
                 open={roleDialogOpen}
                 onClose={handleRoleDialogClose}
-                aria-labelledby="role-confirmation-dialog-title"
-                aria-describedby="role-confirmation-dialog-description"
-            >
-                <DialogTitle id="role-confirmation-dialog-title">
-                    Change User Role?
-                </DialogTitle>
-                <DialogContent>
-                    <DialogContentText id="role-confirmation-dialog-description">
-                        {userToUpdateRole && newRoleToSet &&
-                            `Are you sure you want to change ${userToUpdateRole?.first_name} ${userToUpdateRole?.last_name}'s role to ${newRoleToSet === 1 ? 'Admin' : 'User'}? This will ${newRoleToSet === 1 ? 'grant administrative privileges' : 'remove administrative privileges'} for this user.`
-                        }
-                    </DialogContentText>
-                </DialogContent>
-                <DialogActions>
-                    <Button
-                        sx={{
-                            marginRight: '8px',
-                            backgroundColor: colors.secondary.mediumGreen,
-                            color: colors.white,
-                            '&:hover': {
-                                backgroundColor: colors.secondary.darkGray,
-                            },
-                            borderRadius: '8px',
-                        }}
-                        onClick={handleRoleDialogClose}
-                        color="secondary"
-                    >
-                        Cancel
-                    </Button>
-                    <Button
-                        sx={{
-                            marginRight: '8px',
-                            backgroundColor: colors.primary.brightGreen,
-                            color: colors.white,
-                            '&:hover': {
-                                backgroundColor: colors.primary.darkGreen,
-                            },
-                            borderRadius: '8px',
-                        }}
-                        onClick={handleConfirmRoleUpdate}
-                        color="primary"
-                        autoFocus
-                    >
-                        Yes, Change Role
-                    </Button>
-                </DialogActions>
-            </Dialog>
+                onConfirm={handleConfirmRoleUpdate}
+                title="Change User Role?"
+                message={userToUpdateRole && newRoleToSet &&
+                    `Are you sure you want to change ${userToUpdateRole?.first_name} ${userToUpdateRole?.last_name}'s role to ${newRoleToSet === 1 ? 'Admin' : 'User'}? This will ${newRoleToSet === 1 ? 'grant administrative privileges' : 'remove administrative privileges'} for this user.`
+                }
+                confirmText="Yes, Change Role"
+            />
         </div>
     );
 }
 
-
-
-const containerStyles = {
-    padding: '1rem'
-};
-
-const headerStyles = {
-    marginBottom: '2rem'
-};
-
-const titleStyles = {
-    color: colors.primary.darkGreen,
-    fontSize: '2rem',
-    fontWeight: 'bold',
-    margin: '0 0 0.5rem 0'
-};
-
-const subtitleStyles = {
-    color: colors.secondary.darkGray,
-    fontSize: '1.1rem',
-    margin: 0
-};
-
-const errorStyles = {
-    backgroundColor: '#fee',
-    color: colors.danger,
-    padding: '1rem',
-    borderRadius: '8px',
-    marginBottom: '1rem',
-    border: `1px solid ${colors.danger}`
-};
-
-const loadingStyles = {
-    textAlign: 'center',
-    padding: '2rem',
-    color: colors.secondary.darkGray,
-    fontSize: '1.1rem'
-};
-
-const statsContainerStyles = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-    gap: '1rem',
-    marginBottom: '2rem'
-};
-
-const statCardStyles = {
-    backgroundColor: colors.white,
-    padding: '1.5rem',
-    borderRadius: '12px',
-    textAlign: 'center',
-    boxShadow: '0 2px 8px rgba(0, 63, 45, 0.1)',
-    border: `1px solid ${colors.secondary.paleGray}`
-};
-
-const statTitleStyles = {
-    color: colors.secondary.darkGray,
-    fontSize: '0.9rem',
-    margin: '0 0 0.5rem 0',
-    textTransform: 'uppercase',
-    letterSpacing: '0.5px'
-};
-
-const statNumberStyles = {
-    fontSize: '2rem',
-    fontWeight: 'bold',
-    color: colors.primary.darkGreen,
-    margin: 0
-};
-
 const usersTableContainerStyles = {
-    backgroundColor: colors.white,
-    borderRadius: '12px',
-    padding: '1.5rem',
-    boxShadow: '0 2px 8px rgba(0, 63, 45, 0.1)',
-    border: `1px solid ${colors.secondary.paleGray}`
-};
-
-const sectionTitleStyles = {
-    color: colors.primary.darkGreen,
-    fontSize: '1.5rem',
-    fontWeight: 'bold',
-    marginBottom: '1rem'
+    ...card,
+    marginTop: '2rem'
 };
 
 const tableContainerStyles = {
@@ -816,7 +566,6 @@ const roleTagStyles = {
     borderRadius: '20px',
     fontSize: '0.8rem',
     fontWeight: '600',
-    textTransform: 'uppercase',
     letterSpacing: '0.5px',
     width: 'fit-content',
     whiteSpace: 'nowrap'
@@ -921,7 +670,11 @@ const modalContentStyles = {
     maxWidth: '500px',
     maxHeight: '90vh',
     overflowY: 'auto',
-    boxShadow: '0 10px 30px rgba(0, 63, 45, 0.3)'
+    boxShadow: '0 10px 30px rgba(0, 63, 45, 0.3)',
+    // Add transition properties
+    transition: 'opacity 0.3s ease, transform 0.3s ease',
+    opacity: 1,
+    transform: 'scale(1)'
 };
 
 const modalHeaderStyles = {
@@ -1013,24 +766,6 @@ const modalSaveButtonStyles = {
 const modalCancelButtonStyles = {
     backgroundColor: colors.secondary.paleGray,
     color: colors.secondary.darkGray
-};
-
-const modalErrorStyles = {
-    backgroundColor: '#fee',
-    color: colors.danger,
-    padding: '1rem',
-    margin: '0 1.5rem',
-    borderRadius: '8px',
-    border: `1px solid ${colors.danger}`
-};
-
-const modalSuccessStyles = {
-    backgroundColor: '#efe',
-    color: colors.success,
-    padding: '1rem',
-    margin: '0 1.5rem',
-    borderRadius: '8px',
-    border: `1px solid ${colors.success}`
 };
 
 export default AdminPanel;

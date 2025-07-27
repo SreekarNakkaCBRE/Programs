@@ -3,7 +3,23 @@ import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from '../api/axios';
 import { colors } from '../utils/colors';
-import { loadImageFromStatic } from "../utils/profilePicUtils";
+import { getImageUrl } from "../config/api";
+import {
+    pageContainer,
+    pageHeader,
+    pageTitle,
+    pageSubtitle,
+    loadingText,
+    largeCard,
+    card,
+    clickableCard,
+    sectionTitle,
+    gridAuto,
+    primaryButton,
+    flexBetween,
+    statNumber,
+    actionIcon
+} from '../utils/commonStyles';
 
 
 function Dashboard() {
@@ -54,8 +70,8 @@ function Dashboard() {
 
     if (!user) {
         return (
-            <div style={containerStyles}>
-                <div style={loadingStyles}>Loading...</div>
+            <div style={pageContainer}>
+                <div style={loadingText}>Loading...</div>
             </div>
         );
     }
@@ -63,12 +79,12 @@ function Dashboard() {
     const isAdmin = user.role?.name === 'admin';
 
     return (
-        <div style={containerStyles}>
-            <div style={headerStyles}>
-                <h1 style={titleStyles}>
+        <div style={pageContainer}>
+            <div style={pageHeader}>
+                <h1 style={pageTitle}>
                     {isAdmin ? 'Admin Dashboard' : 'Dashboard'}
                 </h1>
-                <p style={subtitleStyles}>
+                <p style={pageSubtitle}>
                     Welcome back, {user.first_name} {user.last_name}!
                 </p>
             </div>
@@ -78,7 +94,7 @@ function Dashboard() {
                     <div style={avatarStyles}>
                         {user.profile_pic && !imageError ? (
                             <img 
-                                src={loadImageFromStatic(user.profile_pic)} 
+                                src={getImageUrl(user.profile_pic)} 
                                 alt="Profile" 
                                 style={avatarImageStyles}
                                 onError={() => setImageError(true)}
@@ -100,41 +116,33 @@ function Dashboard() {
                 </div>
                 <div style={actionButtonsStyles}>
                     <button 
-                        style={primaryButtonStyles}
+                        style={primaryButton}
                         onClick={() => navigate('/profile')}
                     >
                         Edit Profile
                     </button>
-                    {isAdmin && (
-                        <button 
-                            style={secondaryButtonStyles}
-                            onClick={() => navigate('/admin')}
-                        >
-                            Admin Panel
-                        </button>
-                    )}
                 </div>
             </div>
 
             {isAdmin && (
                 <div style={statsContainerStyles}>
-                    <h2 style={sectionTitleStyles}>System Overview</h2>
-                    <div style={statsGridStyles}>
-                        <div style={statCardStyles}>
+                    <h2 style={sectionTitle}>System Overview</h2>
+                    <div style={gridAuto('200px')}>
+                        <div style={card}>
                             <h3 style={statTitleStyles}>Total Users</h3>
-                            <p style={statNumberStyles}>
+                            <p style={statNumber}>
                                 {loading ? '...' : stats.totalUsers}
                             </p>
                         </div>
-                        <div style={statCardStyles}>
+                        <div style={card}>
                             <h3 style={statTitleStyles}>Active Users</h3>
-                            <p style={statNumberStyles}>
+                            <p style={statNumber}>
                                 {loading ? '...' : stats.activeUsers}
                             </p>
                         </div>
-                        <div style={statCardStyles}>
+                        <div style={card}>
                             <h3 style={statTitleStyles}>Admin Users</h3>
-                            <p style={statNumberStyles}>
+                            <p style={statNumber}>
                                 {loading ? '...' : stats.adminUsers}
                             </p>
                         </div>
@@ -143,10 +151,10 @@ function Dashboard() {
             )}
 
             <div style={actionsContainerStyles}>
-                <h2 style={sectionTitleStyles}>Quick Actions</h2>
-                <div style={actionsGridStyles}>
-                    <div style={actionCardStyles} onClick={() => navigate('/profile')}>
-                        <div style={actionIconStyles}>👤</div>
+                <h2 style={sectionTitle}>Quick Actions</h2>
+                <div style={gridAuto('250px')}>
+                    <div style={clickableCard} onClick={() => navigate('/profile')}>
+                        <div style={actionIcon}>👤</div>
                         <h3 style={actionTitleStyles}>My Profile</h3>
                         <p style={actionDescStyles}>View and edit your profile information</p>
                     </div>
@@ -154,14 +162,14 @@ function Dashboard() {
                     {isAdmin && (
                         <>
   
-                            <div style={actionCardStyles} onClick={() => navigate('/users-list')}>
-                                <div style={actionIconStyles}>👥</div>
+                            <div style={clickableCard} onClick={() => navigate('/users-management')}>
+                                <div style={actionIcon}>👥</div>
                                 <h3 style={actionTitleStyles}>Users Management</h3>
                                 <p style={actionDescStyles}>View and manage all users</p>
                             </div>
 
-                            <div style={actionCardStyles} onClick={() => navigate('/create-user')}>
-                                <div style={actionIconStyles}>➕</div>
+                            <div style={clickableCard} onClick={() => navigate('/create-user')}>
+                                <div style={actionIcon}>➕</div>
                                 <h3 style={actionTitleStyles}>Create User</h3>
                                 <p style={actionDescStyles}>Add a new user to the system</p>
                             </div>
@@ -175,46 +183,13 @@ function Dashboard() {
     );
 }
 
-const containerStyles = {
-    padding: '1rem'
-};
-
-const headerStyles = {
-    marginBottom: '2rem'
-};
-
-const titleStyles = {
-    color: colors.primary.darkGreen,
-    fontSize: '2rem',
-    fontWeight: 'bold',
-    margin: '0 0 0.5rem 0'
-};
-
-const subtitleStyles = {
-    color: colors.secondary.darkGray,
-    fontSize: '1.1rem',
-    margin: 0
-};
-
-const loadingStyles = {
-    textAlign: 'center',
-    padding: '2rem',
-    color: colors.secondary.darkGray,
-    fontSize: '1.1rem'
-};
-
+// Only unique styles specific to Dashboard remain
 const welcomeCardStyles = {
-    backgroundColor: colors.white,
-    borderRadius: '12px',
-    padding: '2rem',
-    marginBottom: '2rem',
-    boxShadow: '0 2px 8px rgba(0, 63, 45, 0.1)',
-    border: `1px solid ${colors.secondary.paleGray}`,
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    ...largeCard,
+    ...flexBetween,
     flexWrap: 'wrap',
-    gap: '1rem'
+    gap: '1rem',
+    marginBottom: '2rem'
 };
 
 const userInfoStyles = {
@@ -292,95 +267,20 @@ const actionButtonsStyles = {
     flexWrap: 'wrap'
 };
 
-const primaryButtonStyles = {
-    backgroundColor: colors.primary.brightGreen,
-    color: colors.primary.darkGreen,
-    border: 'none',
-    padding: '0.75rem 1.5rem',
-    borderRadius: '8px',
-    fontSize: '1rem',
-    fontWeight: '600',
-    cursor: 'pointer',
-    transition: 'all 0.3s ease'
-};
-
-const secondaryButtonStyles = {
-    backgroundColor: colors.secondary.teal,
-    color: colors.white,
-    border: 'none',
-    padding: '0.75rem 1.5rem',
-    borderRadius: '8px',
-    fontSize: '1rem',
-    fontWeight: '600',
-    cursor: 'pointer',
-    transition: 'all 0.3s ease'
-};
-
 const statsContainerStyles = {
     marginBottom: '2rem'
 };
 
-const sectionTitleStyles = {
-    color: colors.primary.darkGreen,
-    fontSize: '1.5rem',
-    fontWeight: 'bold',
-    marginBottom: '1rem'
-};
-
-const statsGridStyles = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-    gap: '1rem'
-};
-
-const statCardStyles = {
-    backgroundColor: colors.white,
-    padding: '1.5rem',
-    borderRadius: '12px',
-    textAlign: 'center',
-    boxShadow: '0 2px 8px rgba(0, 63, 45, 0.1)',
-    border: `1px solid ${colors.secondary.paleGray}`
-};
-
 const statTitleStyles = {
     color: colors.secondary.darkGray,
-    fontSize: '0.9rem',
+    fontSize: '1rem',
     margin: '0 0 0.5rem 0',
-    textTransform: 'uppercase',
-    letterSpacing: '0.5px'
-};
-
-const statNumberStyles = {
-    fontSize: '2rem',
-    fontWeight: 'bold',
-    color: colors.primary.darkGreen,
-    margin: 0
+    letterSpacing: '0.5px',
+    textAlign: 'center'
 };
 
 const actionsContainerStyles = {
     marginBottom: '2rem'
-};
-
-const actionsGridStyles = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-    gap: '1rem'
-};
-
-const actionCardStyles = {
-    backgroundColor: colors.white,
-    padding: '1.5rem',
-    borderRadius: '12px',
-    textAlign: 'center',
-    boxShadow: '0 2px 8px rgba(0, 63, 45, 0.1)',
-    border: `1px solid ${colors.secondary.paleGray}`,
-    cursor: 'pointer',
-    transition: 'all 0.3s ease'
-};
-
-const actionIconStyles = {
-    fontSize: '2.5rem',
-    marginBottom: '1rem'
 };
 
 const actionTitleStyles = {

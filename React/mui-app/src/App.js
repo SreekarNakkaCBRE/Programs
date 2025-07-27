@@ -1,9 +1,9 @@
-import TypographyDemo from './Typography.jsx';
 
+import Calculator from './Calculator.jsx';
 function App() {
   return (
     <div>
-      <TypographyDemo />
+      <Calculator />
     </div>
   );
 }

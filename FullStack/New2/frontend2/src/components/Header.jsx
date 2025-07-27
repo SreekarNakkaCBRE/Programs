@@ -2,7 +2,7 @@ import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import { colors } from "../utils/colors";
-import { loadImageFromStatic } from "../utils/profilePicUtils";
+import { getImageUrl } from "../config/api";
 
 function Header() {
     const { user, logout } = useAuth();
@@ -57,17 +57,23 @@ function Header() {
         setShowProfileDropdown(false);
     };
 
+    const handleLogoClick = () => {
+        window.open('https://www.cbre.com/', '_blank');
+    };
+
     return (
         <header style={headerStyles}>
             <div style={headerContentStyles}>
                 <div style={logoContainerStyles}>
-                    <img 
+                    <img onClick={handleLogoClick}
                         src="/logo.jpg" 
                         alt="Logo" 
                         style={logoImageStyles}
                         onError={(e) => {
                             e.target.style.display = 'none';
                         }}
+                        
+                        
                     />
                     <h2 style={logoTextStyles}>Role Management Dashboard</h2>
                 </div>
@@ -80,7 +86,7 @@ function Header() {
                                     <div style={profileAvatarStyles}>
                                         {user.profile_pic ? (
                                             <img 
-                                                src={loadImageFromStatic(user.profile_pic)} 
+                                                src={getImageUrl(user.profile_pic)} 
                                                 alt="Profile" 
                                                 style={profileImageStyles}
                                                 onError={(e) => {
@@ -157,7 +163,7 @@ const headerContentStyles = {
 const logoContainerStyles = {
     display: 'flex',
     alignItems: 'center',
-    gap: '1rem'
+    gap: '1rem',
 };
 
 const logoImageStyles = {
@@ -262,6 +268,8 @@ const dropdownItemStyles = {
     gap: '0.5rem',
     transition: 'background-color 0.2s ease',
     borderBottom: `1px solid ${colors.secondary.paleGray}`
+    
+    
 };
 
 const logoutItemStyles = {

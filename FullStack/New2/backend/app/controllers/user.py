@@ -1,13 +1,27 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from app.dbconfig.database import SessionLocal, engine, Base, get_db
 from sqlalchemy.orm import Session
 from app.schemas.user import UserRead, UserCreate, UserPartialUpdate, UserProfileResponse, UserUpdateResponse, UsersListResponse, RoleUpdateResponse, RoleUpdateRequest
 from app.models.user import User
 from app.utils.dependencies import get_current_user, require_admin
-from app.services.user_service import create_user, get_me, update_profile, list_all_users, update_user_role, update_user
+from app.services.user_service import create_user, get_me, update_profile, list_all_users, update_user_role, update_user, check_email_availability
 from app.logger.logger import logger
 
 router = APIRouter()
+
+@router.get("/check-email")
+def check_email_endpoint(email: str = Query(..., description="Email to check availability")):
+    """
+    Check if an email address is available for registration.
+    Returns {'available': True/False}
+    """
+    from app.dbconfig.database import SessionLocal
+    db = SessionLocal()
+    try:
+        is_available = check_email_availability(db, email)
+        return {"available": is_available, "email": email}
+    finally:
+        db.close()
 
 @router.get("/my_profile", response_model=UserProfileResponse)
 def get_my_profile(current_user: User = Depends(get_current_user)):

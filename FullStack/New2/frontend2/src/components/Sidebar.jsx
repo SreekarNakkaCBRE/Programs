@@ -29,7 +29,7 @@ function Sidebar() {
     };
 
     return (
-        <div style={sidebarStyles}>
+        <div style={sidebarStyles} className="sidebar">
             <div style={userCardStyles}>
                 <div style={avatarStyles}>
                     {user?.first_name?.[0]?.toUpperCase() || 'U'}

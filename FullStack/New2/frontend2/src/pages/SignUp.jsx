@@ -1,115 +1,219 @@
-import {useState} from 'react';
+import { useState } from 'react';
 import axios from '../api/axios';
 import { useNavigate } from 'react-router-dom';
 import { useSnackbar } from 'notistack';
-import { CheckCircle } from '@mui/icons-material';
+import { showSuccess, showError } from '../utils/snackbar';
+import { useFormValidation, getPasswordStrength } from '../utils/validation';
+import FormField from '../components/FormField';
+import { colors } from '../utils/colors';
 
 
 
-function SignUp(){
-
-    const [form, setForm] = useState({
+function SignUp() {
+    const [profilePic, setProfilePic] = useState(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const [passwordStrength, setPasswordStrength] = useState({ strength: 0, text: '', color: '#ccc' });
+    const [emailChecking, setEmailChecking] = useState(false);
+    const navigate = useNavigate();
+    const { enqueueSnackbar } = useSnackbar();
+    
+    // Use the new validation hook with only required fields for signup
+    const {
+        form,
+        errors,
+        handleChange,
+        handleBlur,
+        validateAllFields,
+        setFieldError,
+        clearFieldError
+    } = useFormValidation({
         first_name: '',
         last_name: '',
         email: '',
         password: '',
         contact_number: '',
         address: '',
-    });
-    const [profile_pic, setProfilePic] = useState(null);
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState('');
-    const navigate = useNavigate();
-    const { enqueueSnackbar } = useSnackbar();
+        role_id: 2  // Default to regular user role (not shown in UI for signup)
+    }, 'signup');
 
-    const handleChange = (e) => {
-        setForm({
-            ...form, [e.target.name]: e.target.value
-        });
-        if (error) setError('');
-    }
+    // Custom password change handler
+    const handlePasswordChange = (e) => {
+        handleChange(e);
+        setPasswordStrength(getPasswordStrength(e.target.value));
+    };
 
+    // Check email availability with improved error handling
+    const checkEmailAvailability = async (email) => {
+        if (!email || !email.includes('@')) return;
+        
+        setEmailChecking(true);
+        clearFieldError('email');
+        
+        try {
+            const response = await axios.get(`/users/check-email?email=${encodeURIComponent(email)}`);
+            if (!response.data.available) {
+                setFieldError('email', 'Email is already registered');
+            }
+        } catch (error) {
+            console.error('Error checking email:', error);
+            setFieldError('email', 'Error checking email availability');
+        } finally {
+            setEmailChecking(false);
+        }
+    };
+
+    // Enhanced email change handler with debounced availability check
+    const handleEmailChange = (e) => {
+        handleChange(e);
+        clearFieldError('email');
+        
+        const email = e.target.value;
+        // Only check availability if email seems valid and complete
+        if (email && email.includes('@') && email.includes('.') && email.length > 5) {
+            // Clear any existing timeout
+            if (window.signupEmailTimeout) {
+                clearTimeout(window.signupEmailTimeout);
+            }
+            
+            // Set new timeout for email check
+            window.signupEmailTimeout = setTimeout(() => {
+                // Only check if field doesn't have validation errors
+                if (!errors.email) {
+                    checkEmailAvailability(email);
+                }
+            }, 1000);
+        }
+    };
+
+    // Enhanced file change handler with better validation
     const handleFileChange = (e) => {
         const file = e.target.files[0];
         if (file) {
             // Validate file type
             if (!file.type.startsWith('image/')) {
-                setError('Please select an image file (JPG, PNG, etc.)');
+                showError(enqueueSnackbar, 'Please select a valid image file (JPEG, PNG, etc.)');
                 e.target.value = ''; // Clear the input
                 return;
             }
             
             // Validate file size (max 5MB)
             if (file.size > 5 * 1024 * 1024) {
-                setError('Image size should be less than 5MB');
+                showError(enqueueSnackbar, 'File size must be less than 5MB');
                 e.target.value = ''; // Clear the input
                 return;
             }
             
             setProfilePic(file);
-            if (error) setError(''); // Clear any previous errors
         }
-    }
+    };
 
+    // Enhanced form submission with better error handling
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setIsLoading(true);
-        setError('');
         
-        // Create signup data as JSON (not FormData) to match backend expectations
-        const signupData = {
-            ...form,
-            profile_pic: profile_pic ? profile_pic.name : null // Backend expects filename as string
-        };
+        // Clear any existing email check timeout
+        if (window.signupEmailTimeout) {
+            clearTimeout(window.signupEmailTimeout);
+        }
+        
+        // Validate all fields before submission
+        const isValid = validateAllFields();
+        
+        if (!isValid) {
+            // Get all error messages for display
+            const errorMessages = Object.values(errors).filter(error => error && error.trim() !== '');
+            
+            if (errorMessages.length > 0) {
+                showError(enqueueSnackbar, 'Please fix the errors in the form');
+            } else {
+                showError(enqueueSnackbar, 'Please fill in all required fields correctly');
+            }
+            return;
+        }
+        
+        setIsLoading(true);
         
         try {
-            // Send as JSON, not FormData, since backend expects JSON
+            let profilePicBase64 = null;
+            
+            // Convert profile picture to base64 if selected
+            if (profilePic) {
+                profilePicBase64 = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => resolve(e.target.result);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(profilePic);
+                });
+            }
+            
+            // Create signup data - role_id is automatically set to 2 for signup
+            const signupData = {
+                first_name: form.first_name,
+                last_name: form.last_name,
+                email: form.email,
+                password: form.password,
+                contact_number: form.contact_number || null,
+                address: form.address || null,
+                role_id: 2, // Always set to user role for signup
+                profile_pic: profilePicBase64
+            };
+            
+            // Send signup request
             await axios.post('/auth/signup', signupData, {
                 headers: {
                     'Content-Type': 'application/json'
                 }
             });
-            enqueueSnackbar('Sign up successful! Please log in.', { 
-                variant: 'success',
-                autoHideDuration: 3000,
-                anchorOrigin: {
-                    vertical: 'bottom',
-                    horizontal: 'left',
-                },
-                style: {
-                    backgroundColor: '#4caf50',
-                    color: '#fff',
-                    fontWeight: '500',
-                },
-                iconVariant: {
-                    success: <CheckCircle style={{ marginRight: 8 }} />
-                }
-            });
-            //alert('Sign up successful! Please log in.');
+            
+            showSuccess(enqueueSnackbar, 'Account created successfully! Please log in.');
             navigate('/login');
+            
         } catch (error) {
-            setError(error.response?.data?.detail || 'Sign up failed. Please try again.');
             console.error('Error during sign up:', error);
+            
+            // Handle specific error messages from backend
+            if (error.response?.data?.detail) {
+                if (error.response.data.detail.includes('email')) {
+                    setFieldError('email', 'Email is already registered');
+                    showError(enqueueSnackbar, 'Email is already registered');
+                } else {
+                    showError(enqueueSnackbar, error.response.data.detail);
+                }
+            } else if (error.response?.status === 400) {
+                showError(enqueueSnackbar, 'Invalid data provided. Please check your inputs.');
+            } else if (error.response?.status === 500) {
+                showError(enqueueSnackbar, 'Server error. Please try again later.');
+            } else {
+                showError(enqueueSnackbar, 'Sign up failed. Please try again.');
+            }
         } finally {
             setIsLoading(false);
         }
-    }
+    };
 
     return(
         <div style={{
             minHeight: '100vh',
-            backgroundColor: '#C0D4CB',
+            backgroundColor: '#C0D4CB', // Fallback color
+            backgroundImage: 'url("/bg1.jpg")',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
+            backgroundAttachment: 'fixed',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             padding: '1rem'
         }}>
             <div style={{
-                backgroundColor: 'white',
+                backgroundColor: 'rgba(255, 255, 255, 0.85)', // More transparent
                 borderRadius: '12px',
                 padding: '2rem',
                 width: '100%',
-                maxWidth: '500px'
+                maxWidth: '500px',
+                boxShadow: '0 15px 50px rgba(0, 0, 0, 0.3)', // Stronger shadow
+                backdropFilter: 'blur(15px)', // More blur
+                border: '2px solid rgba(255, 255, 255, 0.3)' // More visible border
             }}>
                 <div style={{textAlign: 'center', marginBottom: '2rem'}}>
                     <h1 style={{color: '#003F2D', fontSize: '2rem', fontWeight: 'bold', margin: '0 0 0.5rem 0'}}>
@@ -121,158 +225,123 @@ function SignUp(){
                 </div>
                 
                 <form onSubmit={handleSubmit}>
-                    {error && (
-                        <div style={{
-                            backgroundColor: '#fee',
-                            color: 'red',
-                            padding: '0.75rem',
-                            borderRadius: '6px',
-                            marginBottom: '1rem',
-                            fontSize: '0.9rem'
-                        }}>
-                            {error}
-                        </div>
-                    )}
-                    
-                    <div style={{display: 'flex', gap: '1rem', marginBottom: '1.5rem'}}>
-                        <div style={{marginBottom: '1.5rem', flex: 1}}>
-                            <label style={{display: 'block', marginBottom: '0.5rem', color: '#003F2D', fontWeight: '500', fontSize: '0.9rem'}}>
-                                First Name
-                            </label>
-                            <input
+                    <div style={{display: 'flex', gap: '1rem', marginBottom: '1rem'}}>
+                        <div style={{flex: 1}}>
+                            <FormField
+                                label="First Name"
                                 name="first_name"
-                                type="text"
-                                placeholder="Enter first name"
                                 value={form.first_name}
                                 onChange={handleChange}
-                                style={{
-                                    width: '100%',
-                                    padding: '0.75rem',
-                                    border: '2px solid #CBCDCB',
-                                    borderRadius: '8px',
-                                    fontSize: '1rem',
-                                    backgroundColor: 'white',
-                                    boxSizing: 'border-box'
-                                }}
+                                onBlur={() => handleBlur('first_name')}
+                                error={errors.first_name}
+                                placeholder="Enter first name"
                                 required
                             />
                         </div>
-                        <div style={{marginBottom: '1.5rem', flex: 1}}>
-                            <label style={{display: 'block', marginBottom: '0.5rem', color: '#003F2D', fontWeight: '500', fontSize: '0.9rem'}}>
-                                Last Name
-                            </label>
-                            <input
+                        <div style={{flex: 1}}>
+                            <FormField
+                                label="Last Name"
                                 name="last_name"
-                                type="text"
-                                placeholder="Enter last name"
                                 value={form.last_name}
                                 onChange={handleChange}
-                                style={{
-                                    width: '100%',
-                                    padding: '0.75rem',
-                                    border: '2px solid #CBCDCB',
-                                    borderRadius: '8px',
-                                    fontSize: '1rem',
-                                    backgroundColor: 'white',
-                                    boxSizing: 'border-box'
-                                }}
+                                onBlur={() => handleBlur('last_name')}
+                                error={errors.last_name}
+                                placeholder="Enter last name"
                                 required
                             />
                         </div>
                     </div>
                     
-                    <div style={{marginBottom: '1.5rem'}}>
-                        <label style={{display: 'block', marginBottom: '0.5rem', color: '#003F2D', fontWeight: '500', fontSize: '0.9rem'}}>
-                            Email Address
-                        </label>
-                        <input
-                            name="email"
-                            type="email"
-                            placeholder="Enter your email"
-                            value={form.email}
-                            onChange={handleChange}
-                            style={{
-                                width: '100%',
-                                padding: '0.75rem',
-                                border: '2px solid #CBCDCB',
-                                borderRadius: '8px',
-                                fontSize: '1rem',
-                                backgroundColor: 'white',
-                                boxSizing: 'border-box'
-                            }}
-                            required
-                        />
-                    </div>
+                    <FormField
+                        label="Email Address"
+                        name="email"
+                        type="email"
+                        value={form.email}
+                        onChange={handleEmailChange}
+                        onBlur={() => handleBlur('email')}
+                        error={errors.email}
+                        placeholder="Enter your email"
+                        required
+                    >
+                        {emailChecking && (
+                            <div style={{
+                                fontSize: '12px',
+                                color: '#666',
+                                marginTop: '4px'
+                            }}>
+                                Checking email availability...
+                            </div>
+                        )}
+                    </FormField>
                     
-                    <div style={{marginBottom: '1.5rem'}}>
-                        <label style={{display: 'block', marginBottom: '0.5rem', color: '#003F2D', fontWeight: '500', fontSize: '0.9rem'}}>
-                            Password
-                        </label>
-                        <input
-                            name="password"
-                            type="password"
-                            placeholder="Enter your password"
-                            value={form.password}
-                            onChange={handleChange}
-                            style={{
-                                width: '100%',
-                                padding: '0.75rem',
-                                border: '2px solid #CBCDCB',
-                                borderRadius: '8px',
-                                fontSize: '1rem',
-                                backgroundColor: 'white',
-                                boxSizing: 'border-box'
-                            }}
-                            required
-                        />
-                    </div>
+                    <FormField
+                        label="Password"
+                        name="password"
+                        type="password"
+                        value={form.password}
+                        onChange={handlePasswordChange}
+                        onBlur={() => handleBlur('password')}
+                        error={errors.password}
+                        placeholder="Enter your password"
+                        required
+                    >
+                        {form.password && (
+                            <div style={{
+                                marginTop: '6px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px'
+                            }}>
+                                <div style={{
+                                    flex: 1,
+                                    height: '4px',
+                                    backgroundColor: '#e0e0e0',
+                                    borderRadius: '2px',
+                                    overflow: 'hidden'
+                                }}>
+                                    <div style={{
+                                        height: '100%',
+                                        width: `${(passwordStrength.strength / 4) * 100}%`,
+                                        backgroundColor: passwordStrength.color,
+                                        transition: 'width 0.3s ease, background-color 0.3s ease',
+                                        borderRadius: '2px'
+                                    }} />
+                                </div>
+                                <span style={{
+                                    fontSize: '12px',
+                                    fontWeight: '500',
+                                    color: passwordStrength.color,
+                                    minWidth: '80px'
+                                }}>
+                                    {passwordStrength.text}
+                                </span>
+                            </div>
+                        )}
+                    </FormField>
                     
-                    <div style={{marginBottom: '1.5rem'}}>
-                        <label style={{display: 'block', marginBottom: '0.5rem', color: '#003F2D', fontWeight: '500', fontSize: '0.9rem'}}>
-                            Contact Number
-                        </label>
-                        <input
-                            name="contact_number"
-                            type="tel"
-                            maxLength={10}
-                            minLength={10}
-                            placeholder="Enter your phone number"
-                            value={form.contact_number}
-                            onChange={handleChange}
-                            style={{
-                                width: '100%',
-                                padding: '0.75rem',
-                                border: '2px solid #CBCDCB',
-                                borderRadius: '8px',
-                                fontSize: '1rem',
-                                backgroundColor: 'white',
-                                boxSizing: 'border-box'
-                            }}
-                        />
-                    </div>
+                    <FormField
+                        label="Contact Number"
+                        name="contact_number"
+                        type="tel"
+                        value={form.contact_number}
+                        onChange={handleChange}
+                        onBlur={() => handleBlur('contact_number')}
+                        error={errors.contact_number}
+                        placeholder="Enter 10-digit mobile number"
+                        maxLength={10}
+                        hint="10-digit Indian mobile number (starts with 6-9)"
+                    />
                     
-                    <div style={{marginBottom: '1.5rem'}}>
-                        <label style={{display: 'block', marginBottom: '0.5rem', color: '#003F2D', fontWeight: '500', fontSize: '0.9rem'}}>
-                            Address
-                        </label>
-                        <textarea
-                            name="address"
-                            placeholder="Enter your address"
-                            value={form.address}
-                            onChange={handleChange}
-                            style={{
-                                width: '100%',
-                                padding: '0.75rem',
-                                border: '2px solid #CBCDCB',
-                                borderRadius: '8px',
-                                fontSize: '1rem',
-                                backgroundColor: 'white',
-                                minHeight: '80px',
-                                resize: 'vertical',
-                                boxSizing: 'border-box'
-                            }}
-                        />
-                    </div>
+                    <FormField
+                        label="Address"
+                        name="address"
+                        value={form.address}
+                        onChange={handleChange}
+                        onBlur={() => handleBlur('address')}
+                        error={errors.address}
+                        placeholder="Enter your address"
+                        isTextarea
+                    />
                     
                     <div style={{marginBottom: '1.5rem'}}>
                         <label style={{display: 'block', marginBottom: '0.5rem', color: '#003F2D', fontWeight: '500', fontSize: '0.9rem'}}>
@@ -292,14 +361,14 @@ function SignUp(){
                                 boxSizing: 'border-box'
                             }}
                         />
-                        {profile_pic && (
+                        {profilePic && (
                             <p style={{
                                 color: '#003F2D',
                                 fontSize: '0.8rem',
                                 marginTop: '0.25rem',
                                 marginBottom: 0
                             }}>
-                                Selected: {profile_pic.name}
+                                Selected: {profilePic.name}
                             </p>
                         )}
                         <p style={{
@@ -340,7 +409,7 @@ function SignUp(){
                             style={{
                                 background: 'none',
                                 border: 'none',
-                                color: '#17E88F',
+                                color: colors.primary.gray,
                                 textDecoration: 'underline',
                                 cursor: 'pointer',
                                 fontSize: '0.9rem',
@@ -357,3 +426,4 @@ function SignUp(){
 }
 
 export default SignUp;
+

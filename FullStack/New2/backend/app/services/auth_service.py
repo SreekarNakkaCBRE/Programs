@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from app.models.user import User
 from app.utils.auth import hash_password, verify_password, create_access_token
+from app.utils.file_utils import save_base64_image
 from app.schemas.auth import SignupRequest, LoginRequest, TokenResponse, SignupResponse
 from fastapi import HTTPException, status
 from app.logger.logger import logger
@@ -14,6 +15,8 @@ def signup_user(db: Session, user_data: SignupRequest):
             detail="Email already registered"
         )
     hashed_password = hash_password(user_data.password)
+    
+    # Create user first to get user ID
     new_user = User(
         first_name=user_data.first_name,
         last_name=user_data.last_name,
@@ -21,7 +24,7 @@ def signup_user(db: Session, user_data: SignupRequest):
         password_hash=hashed_password,
         contact_number=user_data.contact_number,
         address=user_data.address,
-        profile_pic=user_data.profile_pic,
+        profile_pic=None,  # Will be updated after saving image
         role_id=user_data.role_id,
         is_active=True
     )
@@ -29,6 +32,18 @@ def signup_user(db: Session, user_data: SignupRequest):
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
+    
+    # Handle profile picture if provided
+    if user_data.profile_pic:
+        try:
+            profile_pic_path = save_base64_image(user_data.profile_pic, new_user.id)
+            if profile_pic_path:
+                new_user.profile_pic = profile_pic_path
+                db.commit()
+                db.refresh(new_user)
+        except Exception as e:
+            logger.warning(f"Failed to save profile picture for user {new_user.email}: {e}")
+            # Continue without profile picture rather than failing the signup
     
     return SignupResponse(
         message="User registered successfully",
@@ -49,6 +64,6 @@ def login_user(db: Session, login_data: LoginRequest):
             status_code=status.HTTP_403_FORBIDDEN,
             detail="User is inactive"
         )
-    logger.info(f"User {user.email} logged in successfully")
+    logger.info(f"User {user.email} trying to log in")
     access_token = create_access_token(data={"sub":user.email, "role_id": user.role_id})
     return TokenResponse(access_token=access_token, token_type="bearer")

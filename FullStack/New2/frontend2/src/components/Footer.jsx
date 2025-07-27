@@ -9,9 +9,9 @@ function Footer() {
             <div style={footerContentStyles}>
                 <p style={footerText}>&copy; 2025 Role Management Dashboard. All rights reserved.</p>
                 <div style={footerLinksStyles}>
-                    <a href="https://www.cbre.com/about-us/global-web-privacy-and-cookie-policy" target='_blank' style={linkStyles}>Privacy Policy</a>
-                    <a href="https://www.cbre.com/about-us/disclaimer-terms-of-use" target='_blank' style={linkStyles}>Terms of Service</a>
-                    <a href="https://www.cbre.com/about-us/culture-and-history/contact-us" target='_blank' style={linkStyles}>Contact</a>
+                    <a href="https://www.cbre.com/about-us/global-web-privacy-and-cookie-policy" target='_blank' rel="noreferrer" style={linkStyles}>Privacy Policy</a>
+                    <a href="https://www.cbre.com/about-us/disclaimer-terms-of-use" target='_blank' rel="noreferrer" style={linkStyles}>Terms of Service</a>
+                    <a href="https://www.cbre.com/about-us/culture-and-history/contact-us" target='_blank' rel="noreferrer" style={linkStyles}>Contact</a>
                 </div>
             </div>
         </footer>
@@ -29,7 +29,7 @@ const footerStyles = {
 };
 
 const footerText = {
-    marginLeft: "120px"
+    marginLeft: "150px"
 };
 
 const footerContentStyles = {
