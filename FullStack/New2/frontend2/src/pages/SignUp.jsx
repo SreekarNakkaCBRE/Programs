@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import axios from '../api/axios';
 import { useNavigate } from 'react-router-dom';
 import { useSnackbar } from 'notistack';
@@ -7,17 +7,15 @@ import { useFormValidation, getPasswordStrength } from '../utils/validation';
 import FormField from '../components/FormField';
 import { colors } from '../utils/colors';
 
-
-
 function SignUp() {
     const [profilePic, setProfilePic] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const [passwordStrength, setPasswordStrength] = useState({ strength: 0, text: '', color: '#ccc' });
     const [emailChecking, setEmailChecking] = useState(false);
+    const [emailAvailabilityStatus, setEmailAvailabilityStatus] = useState(null); // 'available', 'unavailable', or null
     const navigate = useNavigate();
     const { enqueueSnackbar } = useSnackbar();
     
-    // Use the new validation hook with only required fields for signup
     const {
         form,
         errors,
@@ -36,6 +34,15 @@ function SignUp() {
         role_id: 2  // Default to regular user role (not shown in UI for signup)
     }, 'signup');
 
+    // Cleanup effect to clear email check timeout
+    useEffect(() => {
+        return () => {
+            if (window.signupEmailTimeout) {
+                clearTimeout(window.signupEmailTimeout);
+            }
+        };
+    }, []);
+
     // Custom password change handler
     const handlePasswordChange = (e) => {
         handleChange(e);
@@ -44,19 +51,27 @@ function SignUp() {
 
     // Check email availability with improved error handling
     const checkEmailAvailability = async (email) => {
-        if (!email || !email.includes('@')) return;
+        if (!email || !email.includes('@') || !email.includes('.')) {
+            setEmailAvailabilityStatus(null);
+            return;
+        }
         
         setEmailChecking(true);
-        clearFieldError('email');
+        setEmailAvailabilityStatus(null);
         
         try {
             const response = await axios.get(`/users/check-email?email=${encodeURIComponent(email)}`);
             if (!response.data.available) {
                 setFieldError('email', 'Email is already registered');
+                setEmailAvailabilityStatus('unavailable');
+            } else {
+                clearFieldError('email');
+                setEmailAvailabilityStatus('available');
             }
         } catch (error) {
             console.error('Error checking email:', error);
             setFieldError('email', 'Error checking email availability');
+            setEmailAvailabilityStatus('unavailable');
         } finally {
             setEmailChecking(false);
         }
@@ -64,17 +79,19 @@ function SignUp() {
 
     // Enhanced email change handler with debounced availability check
     const handleEmailChange = (e) => {
-        handleChange(e);
-        clearFieldError('email');
-        
         const email = e.target.value;
+        handleChange(e);
+        
+        // Reset availability status when email changes
+        setEmailAvailabilityStatus(null);
+        
+        // Clear any existing timeout
+        if (window.signupEmailTimeout) {
+            clearTimeout(window.signupEmailTimeout);
+        }
+        
         // Only check availability if email seems valid and complete
         if (email && email.includes('@') && email.includes('.') && email.length > 5) {
-            // Clear any existing timeout
-            if (window.signupEmailTimeout) {
-                clearTimeout(window.signupEmailTimeout);
-            }
-            
             // Set new timeout for email check
             window.signupEmailTimeout = setTimeout(() => {
                 // Only check if field doesn't have validation errors
@@ -82,6 +99,17 @@ function SignUp() {
                     checkEmailAvailability(email);
                 }
             }, 1000);
+        }
+    };
+
+    // Custom email blur handler
+    const handleEmailBlur = () => {
+        handleBlur('email');
+        
+        // If email is valid format and not empty, check availability
+        const email = form.email;
+        if (email && email.includes('@') && email.includes('.') && !errors.email) {
+            checkEmailAvailability(email);
         }
     };
 
@@ -116,10 +144,12 @@ function SignUp() {
             clearTimeout(window.signupEmailTimeout);
         }
         
-        // Validate all fields before submission
-        const isValid = validateAllFields();
-        
-        if (!isValid) {
+        setIsLoading(true);
+
+        // Validate form before submission
+        if (!validateAllFields()) {
+            setIsLoading(false);
+            
             // Get all error messages for display
             const errorMessages = Object.values(errors).filter(error => error && error.trim() !== '');
             
@@ -130,8 +160,17 @@ function SignUp() {
             }
             return;
         }
-        
-        setIsLoading(true);
+
+        // Check if email availability is confirmed
+        if (emailAvailabilityStatus !== 'available') {
+            setIsLoading(false);
+            if (emailAvailabilityStatus === 'unavailable') {
+                showError(enqueueSnackbar, 'Please use an available email address');
+            } else {
+                showError(enqueueSnackbar, 'Please wait for email availability check to complete');
+            }
+            return;
+        }
         
         try {
             let profilePicBase64 = null;
@@ -175,14 +214,10 @@ function SignUp() {
             if (error.response?.data?.detail) {
                 if (error.response.data.detail.includes('email')) {
                     setFieldError('email', 'Email is already registered');
-                    showError(enqueueSnackbar, 'Email is already registered');
+                    showError(enqueueSnackbar, 'Email address is already in use');
                 } else {
                     showError(enqueueSnackbar, error.response.data.detail);
                 }
-            } else if (error.response?.status === 400) {
-                showError(enqueueSnackbar, 'Invalid data provided. Please check your inputs.');
-            } else if (error.response?.status === 500) {
-                showError(enqueueSnackbar, 'Server error. Please try again later.');
             } else {
                 showError(enqueueSnackbar, 'Sign up failed. Please try again.');
             }
@@ -192,7 +227,16 @@ function SignUp() {
     };
 
     return(
-        <div style={{
+        <>
+            <style>
+                {`
+                    @keyframes spin {
+                        0% { transform: rotate(0deg); }
+                        100% { transform: rotate(360deg); }
+                    }
+                `}
+            </style>
+            <div style={{
             minHeight: '100vh',
             backgroundColor: '#C0D4CB', // Fallback color
             backgroundImage: 'url("/bg1.jpg")',
@@ -258,7 +302,7 @@ function SignUp() {
                         type="email"
                         value={form.email}
                         onChange={handleEmailChange}
-                        onBlur={() => handleBlur('email')}
+                        onBlur={handleEmailBlur}
                         error={errors.email}
                         placeholder="Enter your email"
                         required
@@ -267,9 +311,46 @@ function SignUp() {
                             <div style={{
                                 fontSize: '12px',
                                 color: '#666',
-                                marginTop: '4px'
+                                marginTop: '4px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px'
                             }}>
+                                <div style={{
+                                    width: '12px',
+                                    height: '12px',
+                                    border: '2px solid #666',
+                                    borderTop: '2px solid transparent',
+                                    borderRadius: '50%',
+                                    animation: 'spin 1s linear infinite'
+                                }} />
                                 Checking email availability...
+                            </div>
+                        )}
+                        {!emailChecking && emailAvailabilityStatus === 'available' && (
+                            <div style={{
+                                fontSize: '12px',
+                                color: '#4CAF50',
+                                marginTop: '4px',
+                                fontWeight: '500',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px'
+                            }}>
+                                ✓ Email is available
+                            </div>
+                        )}
+                        {!emailChecking && emailAvailabilityStatus === 'unavailable' && (
+                            <div style={{
+                                fontSize: '12px',
+                                color: '#f44336',
+                                marginTop: '4px',
+                                fontWeight: '500',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px'
+                            }}>
+                                ✗ Email is not available
                             </div>
                         )}
                     </FormField>
@@ -422,6 +503,7 @@ function SignUp() {
                 </div>
             </div>
         </div>
+        </>
     );
 }
 

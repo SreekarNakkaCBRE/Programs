@@ -3,18 +3,9 @@ import base64
 import uuid
 from typing import Optional
 from fastapi import HTTPException
+from app.logger.logger import logger
 
 def save_base64_image(base64_data: str, user_id: int) -> Optional[str]:
-    """
-    Save base64 image data to static folder and return the file path.
-    
-    Args:
-        base64_data: Base64 encoded image data (with data:image/... prefix)
-        user_id: User ID for generating unique filename
-        
-    Returns:
-        Relative file path for database storage
-    """
     if not base64_data:
         return None
         
@@ -50,19 +41,10 @@ def save_base64_image(base64_data: str, user_id: int) -> Optional[str]:
         return f"/static/profile_pics/{filename}"
         
     except Exception as e:
-        print(f"Error saving image: {e}")
+        logger.error(f"Error saving image: {e}")
         raise HTTPException(status_code=400, detail="Invalid image data")
 
 def delete_profile_image(file_path: str) -> bool:
-    """
-    Delete a profile image file.
-    
-    Args:
-        file_path: Relative file path from database
-        
-    Returns:
-        True if deleted successfully, False otherwise
-    """
     if not file_path:
         return False
         
@@ -76,5 +58,5 @@ def delete_profile_image(file_path: str) -> bool:
             return True
         return False
     except Exception as e:
-        print(f"Error deleting image: {e}")
+        logger.error(f"Error deleting image: {e}")
         return False

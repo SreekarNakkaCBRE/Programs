@@ -12,8 +12,8 @@ function Layout({ children }) {
                 <main style={contentStyles} className="content">
                     {children}
                 </main>
+                <Footer />
             </div>
-            <Footer />
         </div>
     );
 }
@@ -22,14 +22,14 @@ const layoutStyles = {
     display: 'flex',
     flexDirection: 'column',
     minHeight: '100vh',
-    backgroundColor: colors.secondary.lightGreen,
-    overflow: 'hidden'
+    backgroundColor: colors.secondary.lightGreen
 };
 
 const mainContainerStyles = {
     display: 'flex',
     flex: 1,
     paddingTop: '80px', // Account for fixed header
+    paddingBottom: '60px', // Account for fixed footer
     overflow: 'hidden'
 };
 
@@ -38,7 +38,7 @@ const contentStyles = {
     marginLeft: '250px', // Account for fixed sidebar
     padding: '2rem',
     backgroundColor: colors.secondary.lightGreen,
-    minHeight: 'calc(100vh - 160px)', // Adjust for header and footer
+    minHeight: 'calc(100vh - 140px)', // Adjust for header and footer (80px header + 60px footer)
     boxShadow: '-2px 0 4px rgba(0,0,0,0.1)',
     overflow: 'auto',
     boxSizing: 'border-box',

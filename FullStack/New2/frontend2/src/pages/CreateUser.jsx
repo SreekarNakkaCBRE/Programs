@@ -25,6 +25,7 @@ function CreateUser() {
     const [isLoading, setIsLoading] = useState(false);
     const [passwordStrength, setPasswordStrength] = useState(INITIAL_PASSWORD_STRENGTH);
     const [emailChecking, setEmailChecking] = useState(false);
+    const [emailAvailabilityStatus, setEmailAvailabilityStatus] = useState(null); // 'available', 'unavailable', or null
     const profilePicRef = useRef(null);
     const { enqueueSnackbar } = useSnackbar();
 
@@ -95,19 +96,27 @@ function CreateUser() {
 
     // Check email availability
     const checkEmailAvailability = async (email) => {
-        if (!email || !email.includes('@')) return;
+        if (!email || !email.includes('@') || !email.includes('.')) {
+            setEmailAvailabilityStatus(null);
+            return;
+        }
         
         setEmailChecking(true);
-        clearFieldError('email');
+        setEmailAvailabilityStatus(null);
         
         try {
             const response = await axios.get(`/users/check-email?email=${encodeURIComponent(email)}`);
             if (!response.data.available) {
                 setFieldError('email', 'Email is already registered');
+                setEmailAvailabilityStatus('unavailable');
+            } else {
+                clearFieldError('email');
+                setEmailAvailabilityStatus('available');
             }
         } catch (error) {
             console.error('Error checking email:', error);
             setFieldError('email', 'Error checking email availability');
+            setEmailAvailabilityStatus('unavailable');
         } finally {
             setEmailChecking(false);
         }
@@ -115,17 +124,19 @@ function CreateUser() {
 
     // Enhanced email change handler with debounced availability check
     const handleEmailChange = (e) => {
-        handleChange(e);
-        clearFieldError('email');
-        
         const email = e.target.value;
+        handleChange(e);
+        
+        // Reset availability status when email changes
+        setEmailAvailabilityStatus(null);
+        
+        // Clear any existing timeout
+        if (window.createUserEmailTimeout) {
+            clearTimeout(window.createUserEmailTimeout);
+        }
+        
         // Only check availability if email seems valid and complete
         if (email && email.includes('@') && email.includes('.') && email.length > 5) {
-            // Clear any existing timeout
-            if (window.createUserEmailTimeout) {
-                clearTimeout(window.createUserEmailTimeout);
-            }
-            
             // Set new timeout for email check
             window.createUserEmailTimeout = setTimeout(() => {
                 // Only check if field doesn't have validation errors
@@ -133,6 +144,17 @@ function CreateUser() {
                     checkEmailAvailability(email);
                 }
             }, 1000);
+        }
+    };
+
+    // Custom email blur handler
+    const handleEmailBlur = () => {
+        handleBlur('email');
+        
+        // If email is valid format and not empty, check availability
+        const email = form.email;
+        if (email && email.includes('@') && email.includes('.') && !errors.email) {
+            checkEmailAvailability(email);
         }
     };
 
@@ -157,6 +179,17 @@ function CreateUser() {
                 showError(enqueueSnackbar, 'Please fix the errors in the form');
             } else {
                 showError(enqueueSnackbar, 'Please fill in all required fields correctly');
+            }
+            return;
+        }
+
+        // Check if email availability is confirmed
+        if (emailAvailabilityStatus !== 'available') {
+            setIsLoading(false);
+            if (emailAvailabilityStatus === 'unavailable') {
+                showError(enqueueSnackbar, 'Please use an available email address');
+            } else {
+                showError(enqueueSnackbar, 'Please wait for email availability check to complete');
             }
             return;
         }
@@ -203,7 +236,16 @@ function CreateUser() {
     };
 
     return (
-        <div style={containerStyles}>
+        <>
+            <style>
+                {`
+                    @keyframes spin {
+                        0% { transform: rotate(0deg); }
+                        100% { transform: rotate(360deg); }
+                    }
+                `}
+            </style>
+            <div style={containerStyles}>
             <div style={cardStyles}>
                 <div style={headerStyles}>
                     <h1 style={titleStyles}>Create User</h1>
@@ -239,7 +281,7 @@ function CreateUser() {
                         type="email"
                         value={form.email}
                         onChange={handleEmailChange}
-                        onBlur={() => handleBlur('email')}
+                        onBlur={handleEmailBlur}
                         error={errors.email}
                         placeholder="Enter user's email"
                         required
@@ -248,9 +290,46 @@ function CreateUser() {
                             <div style={{
                                 fontSize: '12px',
                                 color: '#666',
-                                marginTop: '4px'
+                                marginTop: '4px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px'
                             }}>
+                                <div style={{
+                                    width: '12px',
+                                    height: '12px',
+                                    border: '2px solid #666',
+                                    borderTop: '2px solid transparent',
+                                    borderRadius: '50%',
+                                    animation: 'spin 1s linear infinite'
+                                }} />
                                 Checking email availability...
+                            </div>
+                        )}
+                        {!emailChecking && emailAvailabilityStatus === 'available' && (
+                            <div style={{
+                                fontSize: '12px',
+                                color: '#4CAF50',
+                                marginTop: '4px',
+                                fontWeight: '500',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px'
+                            }}>
+                                ✓ Email is available
+                            </div>
+                        )}
+                        {!emailChecking && emailAvailabilityStatus === 'unavailable' && (
+                            <div style={{
+                                fontSize: '12px',
+                                color: '#f44336',
+                                marginTop: '4px',
+                                fontWeight: '500',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px'
+                            }}>
+                                ✗ Email is not available
                             </div>
                         )}
                     </FormField>
@@ -363,6 +442,7 @@ function CreateUser() {
                 </form>
             </div>
         </div>
+        </>
     );
 }
 

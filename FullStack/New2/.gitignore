@@ -1,0 +1,182 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.spyderproject
+.spyproject
+.rope_project
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+.pytype/
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# Node.js / React
+frontend2/node_modules/
+frontend2/npm-debug.log*
+frontend2/yarn-debug.log*
+frontend2/yarn-error.log*
+frontend2/.pnpm-debug.log*
+frontend2/lerna-debug.log*
+frontend2/build/
+frontend2/dist/
+frontend2/.DS_Store
+frontend2/.env.local
+frontend2/.env.development.local
+frontend2/.env.test.local
+frontend2/.env.production.local
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# IDE and Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# nyc test coverage
+.nyc_output
+
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Optional stylelint cache
+.stylelintcache
+
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# dotenv environment variable files
+.env
+.env.development
+.env.test
+.env.production
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Stores VSCode versions used for testing VSCode extensions
+.vscode-test
+
+# Profile pictures and uploaded files
+backend/static/profile_pics/*
+!backend/static/profile_pics/.gitkeep
+frontend2/public/static/profile_pics/*
+!frontend2/public/static/profile_pics/.gitkeep
+frontend2/build/static/profile_pics/*
+!frontend2/build/static/profile_pics/.gitkeep
+
+# Temporary files
+*.tmp
+*.temp
+
+# Backup files
+*.bak
+*.backup
+
+# Cache files
+.cache/
+.parcel-cache/
+
+# Next.js build output (if using Next.js)
+.next/
+out/
+
+# Nuxt.js build / generate output (if using Nuxt.js)
+.nuxt/
+dist/
+
+# Gatsby files (if using Gatsby)
+.cache/
+public/
+
+# Storybook build outputs (if using Storybook)
+.out/
+.storybook-out/
+
+# Temporary folders
+tmp/
+temp/

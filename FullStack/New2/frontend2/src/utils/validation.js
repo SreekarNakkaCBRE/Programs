@@ -147,10 +147,6 @@ export const validateField = (fieldName, value, formData, formType = 'signup') =
     return errors[fieldName] || '';
 };
 
-// =============================================================================
-// PASSWORD STRENGTH UTILITY
-// =============================================================================
-
 export const getPasswordStrength = (password) => {
     if (!password) return { strength: 0, text: 'Enter a password', color: '#ccc' };
 
@@ -259,7 +255,7 @@ export const useFormValidation = (initialForm, formType = 'signup') => {
     };
 
     const validateAllFields = () => {
-        const { isValid, errors: validationErrors } = validateForm(form, formType);
+        const { errors: validationErrors } = validateForm(form, formType);
         
         // Preserve existing email availability errors for both signup and createUser
         const preservedErrors = { ...validationErrors };

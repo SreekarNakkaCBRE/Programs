@@ -22,10 +22,12 @@ const footerStyles = {
     backgroundColor: colors.primary.gray,
     color: colors.white,
     padding: '1px',
-    marginTop: 'auto',
-    position: 'relative',
+    position: 'fixed',
     bottom: 0,
-    width: '100%'
+    left: 0,
+    right: 0,
+    width: '100%',
+    zIndex: 1000 // Ensure it's above the sidebar
 };
 
 const footerText = {

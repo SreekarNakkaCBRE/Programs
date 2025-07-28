@@ -7,7 +7,6 @@ import { showSuccess, showError } from '../utils/snackbar';
 import { useFormValidation } from '../utils/validation';
 import FormField from '../components/FormField';
 
-
 function Login() {
     const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
